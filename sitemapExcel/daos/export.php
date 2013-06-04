@@ -281,6 +281,9 @@ class pxplugin_sitemapExcel_daos_export{
 		$path = preg_replace('/^alias[0-9]*\:/si','alias:',$path);
 		$path = preg_replace('/^alias\:(javascript|https?)\:/si','$1:',$path);
 		$path = preg_replace('/^alias\:\#/si','#',$path);
+		if( preg_match('/^(?:alias\:)?\//s', $path) ){
+			$path = preg_replace('/\/index\.html((?:\?|\#).*)?$/s', '/$1', $path);
+		}
 		return $path;
 	}
 
