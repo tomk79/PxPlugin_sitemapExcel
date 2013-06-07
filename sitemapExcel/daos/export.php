@@ -139,6 +139,16 @@ class pxplugin_sitemapExcel_daos_export{
 		// データ行を作成する
 		$this->mk_xlsx_body($objSheet);
 
+		// 設定シートを作成
+		$objSheet = $objPHPExcel->createSheet();
+		$objSheet->setTitle('(config)');
+		$objSheet->getDefaultStyle()->getFont()->setName('メイリオ');
+		$objSheet->getDefaultStyle()->getFont()->setSize(12);
+		$objSheet->getDefaultStyle()->getFill()->setFillType(PHPExcel_Style_Fill::FILL_SOLID);
+
+		$objSheet->getCell('A1')->setValue(t::data2text($table_definition));
+
+
 		$phpExcelHelper->save($objPHPExcel, $path_output, 'Excel2007');
 
 		clearstatcache();
@@ -191,13 +201,21 @@ class pxplugin_sitemapExcel_daos_export{
 					// 罫線を引く
 					$tmp_col = $def_row['col'];
 					for($i = 0; $i <= $this->max_depth; $i ++ ){
-						$objSheet->getStyle($tmp_col.$this->current_row)->applyFromArray( array(
+						$tmp_border_style = array(
 						  'borders' => array(
 						    'top'     => array('style' => PHPExcel_Style_Border::BORDER_THIN),
 						    'bottom'  => array('style' => PHPExcel_Style_Border::BORDER_THIN),
 						    'left'    => array('style' => PHPExcel_Style_Border::BORDER_THIN),
-						    'right'   => array('style' => PHPExcel_Style_Border::BORDER_THIN)
-						  ) ) );
+						    'right'   => array('style' => PHPExcel_Style_Border::BORDER_THIN, 'color'=>array('rgb'=>'dddddd')),
+						  ) );
+						if($i != 0){
+							$tmp_border_style['borders']['left']['style'] = PHPExcel_Style_Border::BORDER_THIN;
+							$tmp_border_style['borders']['left']['color'] = array('rgb'=>'dddddd');
+						}
+						if($i == $this->max_depth){
+							$tmp_border_style['borders']['right']['style'] = PHPExcel_Style_Border::BORDER_THIN;
+						}
+						$objSheet->getStyle($tmp_col.$this->current_row)->applyFromArray( $tmp_border_style );
 						$tmp_col ++;
 					}
 					unset($tmp_col);
@@ -217,6 +235,9 @@ class pxplugin_sitemapExcel_daos_export{
 					$cellName = ($def_row['col']).$this->current_row;
 
 					$objSheet->getCell($cellName)->setValue($cellValue);
+					$objSheet->getStyle($cellName)->applyFromArray( array('borders'=>array(
+						'left'=>array( 'color'=>array('rgb'=>'666666') ) ,
+					)) );
 
 					// 罫線の一括指定
 					// $objSheet->getStyle($cellName)->applyFromArray( $this->default_cell_style_boarder );

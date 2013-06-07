@@ -99,7 +99,9 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 		}
 		$obj_import = new $tmp_class_name($this->command, $this->px);
 
-		if( !$obj_import->import_xlsx2sitemap() ){
+		$path_xlsx = $this->px->get_conf('paths.px_dir').'data/sitemapExcel_sample.xlsx';//[UTODO]仮実装
+
+		if( !$obj_import->import_xlsx2sitemap( $path_xlsx ) ){
 			$this->px->error()->error_log('FAILED to import xlsx.', __FILE__, __LINE__);
 			print '[ERROR] FAILED to import xlsx.';
 			exit;

@@ -28,7 +28,7 @@ class pxplugin_sitemapExcel_helper_PHPExcelHelper{
 	/**
 	 * 既存のファイルを開く
 	 */
-	public function open( $path ){
+	public function load( $path ){
 		if(!strlen($path)){ return false; }
 		if(!$this->px->dbh()->is_file($path)){ return false; }
 		if(!$this->px->dbh()->is_readable($path)){ return false; }
