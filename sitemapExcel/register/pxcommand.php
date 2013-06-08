@@ -8,6 +8,8 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 
 	private $command;
 
+	private $path_data_dir;
+
 	/**
 	 * コンストラクタ
 	 * @param $command = PXコマンド配列
@@ -16,6 +18,7 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 	public function __construct( $command , $px ){
 		parent::__construct( $command , $px );
 		$this->command = $this->get_command();
+		$this->path_data_dir = $this->px->get_conf('paths.px_dir').'_sys/ramdata/plugins/sitemapExcel/';
 		$this->start();
 	}
 
@@ -25,8 +28,8 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 	private function start(){
 		if( $this->command[2] == 'import' ){
 			return $this->page_import();
-		}elseif( $this->command[2] == 'download' ){
-			return $this->page_download();
+		}elseif( $this->command[2] == 'export' ){
+			return $this->page_export();
 		}
 		return $this->page_homepage();
 	}
@@ -47,8 +50,8 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 		$src .= '	</div></div>'."\n";
 		$src .= '	<div class="cols-col cols-1of2 cols-last"><div class="cols-pad">'."\n";
 		$src .= '		<form action="?" method="get" class="inline">'."\n";
-		$src .= '			<p class="center"><input type="submit" value="ダウンロード" /></p>'."\n";
-		$src .= '			<div><input type="hidden" name="PX" value="'.t::h(implode('.',array($this->command[0],$this->command[1],'download'))).'" /></div>'."\n";
+		$src .= '			<p class="center"><input type="submit" value="エクスポート" /></p>'."\n";
+		$src .= '			<div><input type="hidden" name="PX" value="'.t::h(implode('.',array($this->command[0],$this->command[1],'export'))).'" /></div>'."\n";
 		$src .= '		</form>'."\n";
 		$src .= '	</div></div>'."\n";
 		$src .= '</div><!-- / .cols -->'."\n";
@@ -99,9 +102,10 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 		}
 		$obj_import = new $tmp_class_name($this->command, $this->px);
 
-		$path_xlsx = $this->px->get_conf('paths.px_dir').'data/sitemapExcel_sample.xlsx';//[UTODO]仮実装
+		$path_xlsx = $this->path_data_dir.'sitemapExcel.xlsx';//[UTODO]仮実装
+		$path_csv  = $this->path_data_dir.'sitemapExcel.csv';//[UTODO]仮実装
 
-		if( !$obj_import->import_xlsx2sitemap( $path_xlsx ) ){
+		if( !$obj_import->import_xlsx2sitemap( $path_xlsx, $path_csv ) ){
 			$this->px->error()->error_log('FAILED to import xlsx.', __FILE__, __LINE__);
 			print '[ERROR] FAILED to import xlsx.';
 			exit;
@@ -125,9 +129,9 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 
 
 	/**
-	 * 現在のサイトマップをダウンロードする。
+	 * 現在のサイトマップをエクスポートする。
 	 */
-	private function page_download(){
+	private function page_export(){
 
 		$path_work_dir = $this->px->get_conf('paths.px_dir').'_sys/ramdata/plugins/sitemapExcel/';
 		if( !$this->px->dbh()->mkdir_all($path_work_dir) ){

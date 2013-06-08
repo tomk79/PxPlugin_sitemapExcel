@@ -139,15 +139,72 @@ class pxplugin_sitemapExcel_daos_export{
 		// データ行を作成する
 		$this->mk_xlsx_body($objSheet);
 
+		// ----------------
 		// 設定シートを作成
 		$objSheet = $objPHPExcel->createSheet();
 		$objSheet->setTitle('(config)');
 		$objSheet->getDefaultStyle()->getFont()->setName('メイリオ');
 		$objSheet->getDefaultStyle()->getFont()->setSize(12);
 		$objSheet->getDefaultStyle()->getFill()->setFillType(PHPExcel_Style_Fill::FILL_SOLID);
+		$objSheet->getColumnDimension('A')->setWidth(20);
+		$objSheet->getColumnDimension('B')->setWidth(20);
+		$objSheet->getColumnDimension('C')->setWidth(3);
+		$objSheet->getColumnDimension('D')->setWidth(30);
 
-		$objSheet->getCell('A1')->setValue(t::data2text($table_definition));
+		$row_num = 1;
 
+		$sitemapExcel_info = $this->px->load_px_plugin_class( '/sitemapExcel/register/info.php' );
+		$sitemapExcel_info = new $sitemapExcel_info($this->px);
+		$objSheet->getCell('A'.$row_num)->setValue('sitemapExcel version');
+		$objSheet->getCell('B'.$row_num)->setValue($sitemapExcel_info->get_version());
+		$objSheet->getStyle('A'.$row_num)->getFill()->getStartColor()->setRGB('bbbbbb');
+		$objSheet->mergeCells('B'.$row_num.':'.'D'.$row_num);
+		$objSheet->getStyle('A'.$row_num)->applyFromArray( $this->default_cell_style_boarder );
+		$objSheet->getStyle('B'.$row_num)->applyFromArray( $this->default_cell_style_boarder );
+		$objSheet->getStyle('C'.$row_num)->applyFromArray( $this->default_cell_style_boarder );
+		$objSheet->getStyle('D'.$row_num)->applyFromArray( $this->default_cell_style_boarder );
+
+		$row_num ++;
+
+		foreach( $table_definition as $key=>$row ){
+			switch( $key ){
+				case 'col_define':
+					$objSheet->getCell('A'.$row_num)->setValue($key);
+					$objSheet->getStyle('A'.$row_num)->getFill()->getStartColor()->setRGB('bbbbbb');
+					$objSheet->mergeCells('A'.$row_num.':'.'A'.($row_num+count($row)-1));
+					foreach($row as $def_key=>$def_val){
+						$objSheet->getCell('B'.$row_num)->setValue($def_key);
+						$objSheet->getCell('C'.$row_num)->setValue($def_val['col']);
+						$objSheet->getCell('D'.$row_num)->setValue($def_val['name']);
+
+						$objSheet->getStyle('A'.$row_num)->getFill()->getStartColor()->setRGB('bbbbbb');
+						$objSheet->getStyle('B'.$row_num)->getFill()->getStartColor()->setRGB('dddddd');
+
+						$objSheet->getStyle('A'.$row_num)->applyFromArray( $this->default_cell_style_boarder );
+						$objSheet->getStyle('B'.$row_num)->applyFromArray( $this->default_cell_style_boarder );
+						$objSheet->getStyle('C'.$row_num)->applyFromArray( $this->default_cell_style_boarder );
+						$objSheet->getStyle('D'.$row_num)->applyFromArray( $this->default_cell_style_boarder );
+						$row_num ++;
+					}
+					break;
+				default:
+					$objSheet->getCell('A'.$row_num)->setValue($key);
+					$objSheet->getCell('B'.$row_num)->setValue(t::data2text($row));
+
+					$objSheet->getStyle('A'.$row_num)->getFill()->getStartColor()->setRGB('bbbbbb');
+
+					$objSheet->getStyle('A'.$row_num)->applyFromArray( $this->default_cell_style_boarder );
+					$objSheet->getStyle('B'.$row_num)->applyFromArray( $this->default_cell_style_boarder );
+					$objSheet->getStyle('C'.$row_num)->applyFromArray( $this->default_cell_style_boarder );
+					$objSheet->getStyle('D'.$row_num)->applyFromArray( $this->default_cell_style_boarder );
+					$objSheet->mergeCells('B'.$row_num.':'.'D'.$row_num);
+					$row_num ++;
+					break;
+			}
+			continue;
+		}
+
+		$objPHPExcel->setActiveSheetIndex(0);//メインのセルを選択しなおし。
 
 		$phpExcelHelper->save($objPHPExcel, $path_output, 'Excel2007');
 

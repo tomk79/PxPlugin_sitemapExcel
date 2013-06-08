@@ -34,9 +34,54 @@ class pxplugin_sitemapExcel_daos_import{
 	}
 
 	/**
+	 * xlsxの構造定義設定を解析する
+	 */
+	private function parse_definition( $objPHPExcel ){
+		$rtn = array();
+		$objPHPExcel->setActiveSheetIndex(1);
+		$objSheet = $objPHPExcel->getActiveSheet();
+
+		$i = 1;
+		while(1){
+			$key = $objSheet->getCell('A'.$i)->getValue();
+			$val = $objSheet->getCell('B'.$i)->getValue();
+
+			if( !strlen($key) ){
+				break;
+			}
+
+			switch($key){
+				case 'col_define':
+					$rtn['col_define'] = array();
+					while(1){
+						$def_key = $objSheet->getCell('B'.$i)->getValue();
+						$def_col = $objSheet->getCell('C'.$i)->getValue();
+						$def_name = $objSheet->getCell('D'.$i)->getValue();
+						if(!strlen($def_key) || !strlen($def_col) || !strlen($def_name)){
+							break;
+						}
+						$rtn['col_define'][$def_key] = array(
+							'key'=>$def_key,
+							'col'=>$def_col,
+							'name'=>$def_name,
+						);
+						$i ++;
+					}
+					break;
+				default:
+					$rtn[$key] = $val;
+					$i ++;
+					break;
+			}
+		}
+
+		return $rtn;
+	}
+
+	/**
 	 * xlsxからサイトマップCSVを出力する。
 	 */
-	public function import_xlsx2sitemap( $path_xlsx ){
+	public function import_xlsx2sitemap( $path_xlsx, $path_csv ){
 
 		$sitemap_definition = $this->px->site()->get_sitemap_definition();
 		$phpExcelHelper = $this->factory_PHPExcelHelper();
@@ -45,30 +90,65 @@ class pxplugin_sitemapExcel_daos_import{
 		}
 		$objPHPExcel = $phpExcelHelper->load($path_xlsx);
 
+		$table_definition = $this->parse_definition($objPHPExcel);//xlsxの構造定義を読み解く
+		$col_title = array();
+		foreach($table_definition['col_define'] as $col_define){
+			if( isset( $col_title['start'] ) ){
+				$col_title['end'] = $col_define['col'];
+				break;
+			}
+			if( $col_define['key'] == 'title' ){
+				$col_title['start'] = $col_define['col'];
+			}
+		}
+
 		$objPHPExcel->setActiveSheetIndex(0);
 		$objSheet = $objPHPExcel->getActiveSheet();
 
 		$sitemap = array();
 
-		$i = 5;
+		$auto_id_num = 1;
+		$breadcrumb = array();
+		$i = $table_definition['row_data_start'];
 		while(1){
 			$page_info = array();
 			$tmp_page_info = array();
-			$tmp_page_info['id'] = $objSheet->getCell('A'.$i)->getValue();
-			$tmp_page_info['title'] = $objSheet->getCell('B'.$i)->getValue().$objSheet->getCell('C'.$i)->getValue().$objSheet->getCell('D'.$i)->getValue().$objSheet->getCell('F'.$i)->getValue().$objSheet->getCell('G'.$i)->getValue();
-			$tmp_page_info['title_h1'] = $objSheet->getCell('H'.$i)->getValue();
-			$tmp_page_info['title_label'] = $objSheet->getCell('I'.$i)->getValue();
-			$tmp_page_info['title_breadcrumb'] = $objSheet->getCell('J'.$i)->getValue();
-			$tmp_page_info['path'] = $objSheet->getCell('K'.$i)->getValue();
-			$tmp_page_info['content'] = $objSheet->getCell('L'.$i)->getValue();
-			$tmp_page_info['list_flg'] = $objSheet->getCell('M'.$i)->getValue();
-			$tmp_page_info['auth_level'] = $objSheet->getCell('N'.$i)->getValue();
-			$tmp_page_info['layout'] = $objSheet->getCell('O'.$i)->getValue();
-			$tmp_page_info['extension'] = $objSheet->getCell('P'.$i)->getValue();
-			$tmp_page_info['orderby'] = $objSheet->getCell('Q'.$i)->getValue();
-			$tmp_page_info['keywords'] = $objSheet->getCell('R'.$i)->getValue();
-			$tmp_page_info['description'] = $objSheet->getCell('S'.$i)->getValue();
-			$tmp_page_info['category_top_flg'] = $objSheet->getCell('T'.$i)->getValue();
+			foreach($sitemap_definition as $key=>$row){
+				$tmp_col_name = $table_definition['col_define'][$row['key']]['col'];
+				if(strlen($tmp_col_name)){
+					$tmp_page_info[$row['key']] = $objSheet->getCell($tmp_col_name.$i)->getValue();
+				}else{
+					$tmp_page_info[$row['key']] = '';
+				}
+			}
+
+			// 省略されたIDを自動的に付与
+			if(!strlen($tmp_page_info['id'])){
+				// UTODO: トップページは空白でなければならない。
+				$tmp_page_info['id'] = 'sitemapExcel_auto_id_'.($auto_id_num ++);
+			}
+
+			// タイトルだけ特別
+			$col_title_col = $col_title['start'];
+			$tmp_page_info['title'] = '';
+			$logical_path_depth = 0;
+			while($col_title_col < $col_title['end']){
+				$tmp_page_info['title'] .= trim( $objSheet->getCell($col_title_col.$i)->getValue() );
+				if(strlen($tmp_page_info['title'])){
+					break;
+				}
+				$col_title_col ++;
+				$logical_path_depth ++;
+			}
+
+			// パンくずも特別
+			if(!strlen($tmp_page_info['id'])){
+				$tmp_page_info['logical_path'] = '';
+			}elseif($logical_path_depth <= 1){
+				$tmp_page_info['logical_path'] = '';
+			}else{
+				$tmp_page_info['logical_path'] = $logical_path_depth;
+			}
 
 			if(!strlen( $tmp_page_info['path'] )){
 				// pathが空白なら終わったものと思う。
@@ -86,8 +166,8 @@ class pxplugin_sitemapExcel_daos_import{
 			$i ++;
 			continue;
 		}
+test::var_dump($sitemap);exit;
 
-		$path_csv = $this->px->get_conf('paths.px_dir').'_sys/ramdata/plugins/sitemapExcel/sitemapExcel_sample.csv';//[UTODO]仮実装
 		$this->px->dbh()->mkdir(dirname($path_csv));
 		$this->px->dbh()->file_overwrite($path_csv, $this->px->dbh()->mk_csv_utf8($sitemap) );//[UTODO]仮実装
 
