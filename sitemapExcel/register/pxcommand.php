@@ -42,15 +42,20 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 		$src = '';
 		$src .= '<p>エクセル形式(*.xlsx)で作成したサイトマップをCSVに変換するプラグインです。</p>'."\n";
 		$src .= '<div class="cols unit">'."\n";
-		$src .= '	<div class="cols-col cols-1of2"><div class="cols-pad">'."\n";
+		$src .= '	<div class="cols-col cols-2of3"><div class="cols-pad">'."\n";
+		$src .= '		<h2>インポート</h2>'."\n";
+		$src .= '		<p>所定の形式の *.xlsx ファイルから、プロジェクトのサイトマップを更新します。</p>'."\n";
+		$src .= '		<p>読み込める xlsx ファイルの構造定義は、エクスポート機能から取得できるファイルを参考にしてください。</p>'."\n";
 		$src .= '		<form action="?" method="get" class="inline">'."\n";
-		$src .= '			<p class="center"><input type="submit" value="インポート" /></p>'."\n";
+		$src .= '			<p class="center"><input type="submit" value="インポートする" /></p>'."\n";
 		$src .= '			<div><input type="hidden" name="PX" value="'.t::h(implode('.',array($this->command[0],$this->command[1],'import'))).'" /></div>'."\n";
 		$src .= '		</form>'."\n";
 		$src .= '	</div></div>'."\n";
-		$src .= '	<div class="cols-col cols-1of2 cols-last"><div class="cols-pad">'."\n";
+		$src .= '	<div class="cols-col cols-1of3 cols-last"><div class="cols-pad">'."\n";
+		$src .= '		<h2>エクスポート</h2>'."\n";
+		$src .= '		<p>プロジェクト「'.t::h($this->px->get_conf('project.name')).'」に現在登録されているサイトマップを、*.xlsx 形式で出力できます。</p>'."\n";
 		$src .= '		<form action="?" method="get" class="inline">'."\n";
-		$src .= '			<p class="center"><input type="submit" value="エクスポート" /></p>'."\n";
+		$src .= '			<p class="center"><input type="submit" value="エクスポートする" /></p>'."\n";
 		$src .= '			<div><input type="hidden" name="PX" value="'.t::h(implode('.',array($this->command[0],$this->command[1],'export'))).'" /></div>'."\n";
 		$src .= '		</form>'."\n";
 		$src .= '	</div></div>'."\n";
@@ -67,6 +72,7 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 	 * サイトマップxlsxをインポートする。
 	 */
 	private function page_import(){
+		$this->set_title('インポートする');
 		$error = $this->check_import_check();
 		if( $this->px->req()->get_param('mode') == 'execute' && !count($error) ){
 			return $this->execute_import_execute();
@@ -74,13 +80,38 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 			return $this->page_import_thanks();
 		}elseif( !strlen($this->px->req()->get_param('mode')) ){
 			$error = array();
+			$this->px->req()->delete_uploadfile_all();// 一時ファイルを削除
 		}
 		return $this->page_import_input($error);
 	}
 	private function page_import_input($error){
 		$src = '';
 		$src .= '<p>インポート機能は開発準備中です。</p>'."\n";
-		$src .= '<form action="?" method="get" class="inline">'."\n";
+		$src .= '<form action="?" method="post" class="inline" enctype="multipart/form-data">'."\n";
+
+		$src .= '<table class="form_elements">'."\n";
+		$src .= '	<thead>'."\n";
+		$src .= '		<tr>'."\n";
+		$src .= '			<th>入力項目名</th>'."\n";
+		$src .= '			<th>入力フィールド</th>'."\n";
+		$src .= '		</tr>'."\n";
+		$src .= '	</thead>'."\n";
+		$src .= '	<tbody>'."\n";
+		$src .= '		<tr'.(strlen($error['file_xlsx'])?' class="form_elements-error"':'').'>'."\n";
+		$src .= '			<th>サイトマップ(xlsx形式)</th>'."\n";
+		$src .= '			<td>'."\n";
+		if( strlen($error['file_xlsx']) ){
+			$src .= '<ul class="form_elements-errors">'."\n";
+			$src .= '	<li>'.t::h($error['file_xlsx']).'</li>'."\n";
+			$src .= '</ul>'."\n";
+		}
+		$src .= '				<input type="file" name="file_xlsx" value="" />'."\n";
+		$src .= '			</td>'."\n";
+		$src .= '		</tr>'."\n";
+		$src .= '	</tbody>'."\n";
+		$src .= '</table>'."\n";
+		$src .= ''."\n";
+
 		$src .= '	<p class="center"><input type="submit" value="インポートを実行する" /></p>'."\n";
 		$src .= '	<div><input type="hidden" name="PX" value="'.t::h(implode('.',array($this->command[0],$this->command[1],'import'))).'" /></div>'."\n";
 		$src .= '	<div><input type="hidden" name="mode" value="execute" /></div>'."\n";
@@ -90,6 +121,21 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 	}
 	private function check_import_check(){
 		$rtn = array();
+
+		$ulfile_info = $this->px->req()->get_param('file_xlsx');
+		if( strlen($ulfile_info['tmp_name']) && is_file($ulfile_info['tmp_name']) ){
+			$this->px->req()->save_uploadfile('file_xlsx', $ulfile_info);
+		}
+		$ulfile_info = $this->px->req()->get_uploadfile('file_xlsx');
+
+		if( !strlen($ulfile_info['name']) ){
+			$rtn['file_xlsx'] = 'ファイルがアップロードされませんでした。';
+		}elseif( strtolower($this->px->dbh()->get_extension($ulfile_info['name'])) != 'xlsx' ){
+			$rtn['file_xlsx'] = '拡張子が xlsx ではないファイルがアップロードされました。';
+		}elseif( !strlen($ulfile_info['content']) ){
+			$rtn['file_xlsx'] = 'ファイルが0バイトです。';
+		}
+
 		return $rtn;
 	}
 	private function execute_import_execute(){
@@ -105,14 +151,37 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 		$path_xlsx = $this->path_data_dir.'sitemapExcel.xlsx';//[UTODO]仮実装
 		$path_csv  = $this->path_data_dir.'sitemapExcel.csv';//[UTODO]仮実装
 
-		if( !$obj_import->import_xlsx2sitemap( $path_xlsx, $path_csv ) ){
-			$this->px->error()->error_log('FAILED to import xlsx.', __FILE__, __LINE__);
-			print '[ERROR] FAILED to import xlsx.';
+		if( !$this->px->dbh()->mkdir_all( dirname($path_xlsx) ) ){
+			$this->px->error()->error_log('FAILED to make a directory ['.dirname($path_xlsx).'].', __FILE__, __LINE__);
+			print $this->html_template('[ERROR] FAILED to make a directory ['.dirname($path_xlsx).'].');
 			exit;
 		}
 
+		$ulfileinfo = $this->px->req()->get_uploadfile('file_xlsx');
+		if( !$this->px->dbh()->file_overwrite( $path_xlsx, $ulfileinfo['content'] ) ){
+			$this->px->error()->error_log('FAILED to update inner xlsx.', __FILE__, __LINE__);
+			print $this->html_template('[ERROR] FAILED to update inner xlsx.');
+			exit;
+		}
 
-		return $this->px->redirect( $this->href().'&mode=thanks' );
+		if( !$obj_import->import_xlsx2sitemap( $path_xlsx, $path_csv ) ){
+			$this->px->error()->error_log('FAILED to import xlsx.', __FILE__, __LINE__);
+			print $this->html_template('[ERROR] FAILED to import xlsx.');
+			exit;
+		}
+
+		clearstatcache();
+		$this->px->req()->delete_uploadfile_all();// 一時ファイルを削除
+		clearstatcache();
+
+
+		// 取り急ぎ、変換後のCSVはダウンロードで入手するようにした。
+		// そのままsitemapsディレクトリを更新してしまうかどうか、検討中。
+		// パーミッション設定など必要なこともあり、微妙・・・。このままでいい気もする。
+		$this->px->flush_file($path_csv, array('filename'=>'PxFW_'.$this->px->get_conf('project.id').'_sitemap_'.date('Ymd_Hi').'.csv', 'delete'=>false));
+		exit;
+		// return $this->px->redirect( $this->href().'&mode=thanks' );
+
 	}
 	private function page_import_thanks($error){
 		$src = '';
@@ -154,7 +223,7 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 			exit;
 		}
 
-		$this->px->flush_file($path_work_dir.'tmp.xlsx', array('filename'=>'PxFW_'.$this->px->get_conf('project.id').'sitemap_'.date('Ymd_Hi').'.xlsx', 'delete'=>true));
+		$this->px->flush_file($path_work_dir.'tmp.xlsx', array('filename'=>'PxFW_'.$this->px->get_conf('project.id').'_sitemap_'.date('Ymd_Hi').'.xlsx', 'delete'=>true));
 		exit;
 	}
 
