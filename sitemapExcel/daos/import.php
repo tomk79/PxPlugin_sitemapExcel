@@ -82,6 +82,10 @@ class pxplugin_sitemapExcel_daos_import{
 	 * xlsxからサイトマップCSVを出力する。
 	 */
 	public function import_xlsx2sitemap( $path_xlsx, $path_csv ){
+		$path_toppage = '/';
+		if( strlen($this->px->get_conf('project.path_top')) ){
+			$path_toppage = $this->px->get_conf('project.path_top');
+		}
 
 		$sitemap_definition = $this->px->site()->get_sitemap_definition();
 		$phpExcelHelper = $this->factory_PHPExcelHelper();
@@ -108,15 +112,17 @@ class pxplugin_sitemapExcel_daos_import{
 		$sitemap = array();
 
 		$auto_id_num = 1;
-		$breadcrumb = array();
-		$i = $table_definition['row_data_start'];
+		$last_breadcrumb = array();
+		$last_page_id = null;
+		$logical_path_last_depth = 0;
+		$xlsx_row = $table_definition['row_data_start'];
 		while(1){
 			$page_info = array();
 			$tmp_page_info = array();
 			foreach($sitemap_definition as $key=>$row){
 				$tmp_col_name = $table_definition['col_define'][$row['key']]['col'];
 				if(strlen($tmp_col_name)){
-					$tmp_page_info[$row['key']] = $objSheet->getCell($tmp_col_name.$i)->getValue();
+					$tmp_page_info[$row['key']] = $objSheet->getCell($tmp_col_name.$xlsx_row)->getValue();
 				}else{
 					$tmp_page_info[$row['key']] = '';
 				}
@@ -124,8 +130,10 @@ class pxplugin_sitemapExcel_daos_import{
 
 			// 省略されたIDを自動的に付与
 			if(!strlen($tmp_page_info['id'])){
-				// UTODO: トップページは空白でなければならない。
-				$tmp_page_info['id'] = 'sitemapExcel_auto_id_'.($auto_id_num ++);
+				// トップページは空白でなければならない。
+				if( $path_toppage != $tmp_page_info['path'] ){
+					$tmp_page_info['id'] = 'sitemapExcel_auto_id_'.($auto_id_num ++);
+				}
 			}
 
 			// タイトルだけ特別
@@ -133,7 +141,7 @@ class pxplugin_sitemapExcel_daos_import{
 			$tmp_page_info['title'] = '';
 			$logical_path_depth = 0;
 			while($col_title_col < $col_title['end']){
-				$tmp_page_info['title'] .= trim( $objSheet->getCell($col_title_col.$i)->getValue() );
+				$tmp_page_info['title'] .= trim( $objSheet->getCell($col_title_col.$xlsx_row)->getValue() );
 				if(strlen($tmp_page_info['title'])){
 					break;
 				}
@@ -142,34 +150,48 @@ class pxplugin_sitemapExcel_daos_import{
 			}
 
 			// パンくずも特別
-			if(!strlen($tmp_page_info['id'])){
-				$tmp_page_info['logical_path'] = '';
-			}elseif($logical_path_depth <= 1){
-				$tmp_page_info['logical_path'] = '';
-			}else{
-				$tmp_page_info['logical_path'] = $logical_path_depth;
+			$tmp_breadcrumb = $last_breadcrumb;
+			if( $logical_path_last_depth === $logical_path_depth ){
+				// 前回と深さが変わっていなかったら
+			}elseif( $logical_path_last_depth < $logical_path_depth ){
+				// 前回の深さより深くなっていたら
+				$tmp_breadcrumb = $last_breadcrumb;
+				array_push($tmp_breadcrumb, $last_page_id );
+			}elseif( $logical_path_last_depth > $logical_path_depth ){
+				// 前回の深さより浅くなっていたら
+				$tmp_breadcrumb = array();
+				for($i = 0; $i < $logical_path_depth; $i ++){
+					if(is_null($last_breadcrumb[$i])){break;}
+					$tmp_breadcrumb[$i] = $last_breadcrumb[$i];
+				}
 			}
+			$tmp_page_info['logical_path'] = implode('>', $tmp_breadcrumb);
+			$tmp_page_info['logical_path'] = preg_replace('/^\>/s', '', $tmp_page_info['logical_path']);
+
+
+			// 今回のパンくずとパンくずの深さを記録
+			$logical_path_last_depth = $logical_path_depth;
+			$last_breadcrumb = $tmp_breadcrumb;
+			$last_page_id = $tmp_page_info['id'];
 
 			if(!strlen( $tmp_page_info['path'] )){
 				// pathが空白なら終わったものと思う。
 				break;
 			}
 
-
 			$page_info = array();
 			foreach($sitemap_definition as $row){
 				$page_info[$row['key']] = $tmp_page_info[$row['key']];
 			}
 
-			$sitemap[$page_info['path']] = $page_info;
+			array_push( $sitemap, $page_info );
 
-			$i ++;
+			$xlsx_row ++;
 			continue;
 		}
-test::var_dump($sitemap);exit;
 
 		$this->px->dbh()->mkdir(dirname($path_csv));
-		$this->px->dbh()->file_overwrite($path_csv, $this->px->dbh()->mk_csv_utf8($sitemap) );//[UTODO]仮実装
+		$this->px->dbh()->file_overwrite($path_csv, $this->px->dbh()->mk_csv_utf8($sitemap) );
 
 		clearstatcache();
 		return true;
