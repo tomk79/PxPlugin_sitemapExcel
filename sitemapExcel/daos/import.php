@@ -117,6 +117,7 @@ class pxplugin_sitemapExcel_daos_import{
 		$logical_path_last_depth = 0;
 		$xlsx_row = $table_definition['row_data_start'];
 		while(1){
+			set_time_limit(30);
 			$page_info = array();
 			$tmp_page_info = array();
 			foreach($sitemap_definition as $key=>$row){

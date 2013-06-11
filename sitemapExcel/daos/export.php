@@ -239,6 +239,8 @@ class pxplugin_sitemapExcel_daos_export{
 			return false;
 		}
 
+		set_time_limit(30);
+
 		foreach( $table_definition['col_define'] as $def_row ){
 			$cellName = ($def_row['col']).$this->current_row;
 			$cellValue = $page_info[$def_row['key']];
