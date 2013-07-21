@@ -81,6 +81,7 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 		}elseif( !strlen($this->px->req()->get_param('mode')) ){
 			$error = array();
 			$this->px->req()->delete_uploadfile_all();// 一時ファイルを削除
+			$this->px->req()->set_param('file_overwrite','1');
 		}
 		return $this->page_import_input($error);
 	}
@@ -106,6 +107,20 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 			$src .= '</ul>'."\n";
 		}
 		$src .= '				<input type="file" name="file_xlsx" value="" />'."\n";
+		$src .= '			</td>'."\n";
+		$src .= '		</tr>'."\n";
+		$src .= '		<tr'.(strlen($error['file_overwrite'])?' class="form_elements-error"':'').'>'."\n";
+		$src .= '			<th>サイトマップCSVの上書き</th>'."\n";
+		$src .= '			<td>'."\n";
+		if( strlen($error['file_overwrite']) ){
+			$src .= '<ul class="form_elements-errors">'."\n";
+			$src .= '	<li>'.t::h($error['file_overwrite']).'</li>'."\n";
+			$src .= '</ul>'."\n";
+		}
+		$src .= '				<ul class="form_elements-list">'."\n";
+		$src .= '					<li><label><input type="radio" name="file_overwrite" value="1"'.($this->px->req()->get_param('file_overwrite')=='1'?' checked="checked"':'').' /> サイトマップCSVを直接上書きする (現在のサイトマップCSVは失われます)</label></li>'."\n";
+		$src .= '					<li><label><input type="radio" name="file_overwrite" value="0"'.($this->px->req()->get_param('file_overwrite')=='0'?' checked="checked"':'').' /> 直接上書きはせず、ダウンロードする。</label></li>'."\n";
+		$src .= '				</ul>'."\n";
 		$src .= '			</td>'."\n";
 		$src .= '		</tr>'."\n";
 		$src .= '	</tbody>'."\n";
@@ -136,6 +151,23 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 			$rtn['file_xlsx'] = 'ファイルが0バイトです。';
 		}
 
+		if( !strlen( $this->px->req()->get_param('file_overwrite') ) ){
+			$rtn['file_overwrite'] = 'サイトマップCSVの上書き設定を選択してください。';
+		}elseif( $this->px->req()->get_param('file_overwrite') < 0 || $this->px->req()->get_param('file_overwrite') > 1 ){
+			$rtn['file_overwrite'] = 'サイトマップCSVの上書き設定に、想定外の値が渡されました。';
+		}
+		if( $this->px->req()->get_param('file_overwrite') == 1 ){
+			$tmp_sitemap_files = $this->px->dbh()->ls( $this->px->get_conf('paths.px_dir').'sitemaps/' );
+			foreach( $tmp_sitemap_files as $tmp_sitemap_files_basename ){
+				if( !$this->px->dbh()->is_writable( $this->px->get_conf('paths.px_dir').'sitemaps/'.$tmp_sitemap_files_basename ) ){
+					$rtn['file_overwrite'] = 'サイトマップCSVファイル 「'.$tmp_sitemap_files_basename.'」を上書きできません。パーミッション設定を変更してください。';
+					break;
+				}
+			}
+			if( !$this->px->dbh()->is_writable($this->px->get_conf('paths.px_dir').'sitemaps/') ){
+				$rtn['file_overwrite'] = 'サイトマップディレクトリ「'.realpath($this->px->get_conf('paths.px_dir').'sitemaps/').'」を上書きできません。パーミッション設定を変更してください。';
+			}
+		}
 		return $rtn;
 	}
 	private function execute_import_execute(){
@@ -171,14 +203,31 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 		}
 
 		clearstatcache();
-		$this->px->req()->delete_uploadfile_all();// 一時ファイルを削除
+		$this->px->req()->delete_uploadfile_all();// セッション上の一時ファイルを削除
 		clearstatcache();
 
 
-		// 取り急ぎ、変換後のCSVはダウンロードで入手するようにした。
-		// そのままsitemapsディレクトリを更新してしまうかどうか、検討中。
-		// パーミッション設定など必要なこともあり、微妙・・・。このままでいい気もする。
-		$this->px->flush_file($path_csv, array('filename'=>'PxFW_'.$this->px->get_conf('project.id').'_sitemap_'.date('Ymd_Hi').'.csv', 'delete'=>false));
+		if( $this->px->req()->get_param('file_overwrite') == 1 ){
+			// サイトマップを自動的に置き換えて完了画面へリダイレクト
+			$tmp_sitemap_files = $this->px->dbh()->ls( $this->px->get_conf('paths.px_dir').'sitemaps/' );
+			foreach( $tmp_sitemap_files as $tmp_sitemap_files_basename ){
+				if( !strlen($tmp_sitemap_files_basename) ){ continue; }
+				if( !$this->px->dbh()->rm( $this->px->get_conf('paths.px_dir').'sitemaps/'.$tmp_sitemap_files_basename ) ){
+					$this->px->error()->error_log('FAILED to remove sitemap file "'.realpath($this->px->get_conf('paths.px_dir').'sitemaps/'.$tmp_sitemap_files_basename).'".', __FILE__, __LINE__);
+					print $this->html_template('[ERROR] FAILED to remove sitemap file "'.realpath($this->px->get_conf('paths.px_dir').'sitemaps/'.$tmp_sitemap_files_basename).'".');
+					exit;
+				}
+			}
+			if( !$this->px->dbh()->rename( $path_csv, $this->px->get_conf('paths.px_dir').'sitemaps/sitemapExcel.csv' ) ){
+				$this->px->error()->error_log('FAILED to rename sitemap file "'.$path_csv.'" to "'.$this->px->get_conf('paths.px_dir').'sitemaps/sitemapExcel.csv".', __FILE__, __LINE__);
+				print $this->html_template('[ERROR] FAILED to remove sitemap file "'.$path_csv.'" to "'.$this->px->get_conf('paths.px_dir').'sitemaps/sitemapExcel.csv".');
+				exit;
+			}
+			return $this->px->redirect( $this->href().'&mode=thanks' );
+		}else{
+			// 変換後のCSVをダウンロード
+			$this->px->flush_file($path_csv, array('filename'=>'PxFW_'.$this->px->get_conf('project.id').'_sitemap_'.date('Ymd_Hi').'.csv', 'delete'=>false));
+		}
 		exit;
 		// return $this->px->redirect( $this->href().'&mode=thanks' );
 

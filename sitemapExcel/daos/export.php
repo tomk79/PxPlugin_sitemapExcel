@@ -79,7 +79,7 @@ class pxplugin_sitemapExcel_daos_export{
 
 		// シートタイトルセル
 		$sheetTitle = '「'.$this->px->get_conf('project.name').'」 サイトマップ';
-		$objSheet->setTitle($sheetTitle);
+		$objSheet->setTitle('sitemap');//←文字数制限がある。超えると落ちる。
 		$objSheet->getCell('A1')->setValue($sheetTitle);
 		$objSheet->getStyle('A1')->getFont()->setSize(24);
 
