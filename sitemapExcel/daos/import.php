@@ -31,52 +31,7 @@ class pxplugin_sitemapExcel_daos_import{
 		}
 		$phpExcelHelper = new $tmp_class_name($this->px);
 		return $phpExcelHelper;
-	}
-
-	/**
-	 * xlsxの構造定義設定を解析する
-	 */
-	private function parse_definition( $objPHPExcel ){
-		$rtn = array();
-		$objPHPExcel->setActiveSheetIndex(1);
-		$objSheet = $objPHPExcel->getActiveSheet();
-
-		$i = 1;
-		while(1){
-			$key = $objSheet->getCell('A'.$i)->getValue();
-			$val = $objSheet->getCell('B'.$i)->getValue();
-
-			if( !strlen($key) ){
-				break;
-			}
-
-			switch($key){
-				case 'col_define':
-					$rtn['col_define'] = array();
-					while(1){
-						$def_key = $objSheet->getCell('B'.$i)->getValue();
-						$def_col = $objSheet->getCell('C'.$i)->getValue();
-						$def_name = $objSheet->getCell('D'.$i)->getValue();
-						if(!strlen($def_key) || !strlen($def_col) || !strlen($def_name)){
-							break;
-						}
-						$rtn['col_define'][$def_key] = array(
-							'key'=>$def_key,
-							'col'=>$def_col,
-							'name'=>$def_name,
-						);
-						$i ++;
-					}
-					break;
-				default:
-					$rtn[$key] = $val;
-					$i ++;
-					break;
-			}
-		}
-
-		return $rtn;
-	}
+	}// factory_PHPExcelHelper()
 
 	/**
 	 * xlsxからサイトマップCSVを出力する。
@@ -94,7 +49,7 @@ class pxplugin_sitemapExcel_daos_import{
 		}
 		$objPHPExcel = $phpExcelHelper->load($path_xlsx);
 
-		$table_definition = $this->parse_definition($objPHPExcel);//xlsxの構造定義を読み解く
+		$table_definition = $this->parse_definition($objPHPExcel, 0);//xlsxの構造定義を読み解く
 		$col_title = array();
 		foreach($table_definition['col_define'] as $col_define){
 			if( isset( $col_title['start'] ) ){
@@ -109,7 +64,17 @@ class pxplugin_sitemapExcel_daos_import{
 		$objPHPExcel->setActiveSheetIndex(0);
 		$objSheet = $objPHPExcel->getActiveSheet();
 
+
+
 		$sitemap = array();
+
+		$page_info = array();
+		foreach($sitemap_definition as $row){
+			$page_info[$row['key']] = '* '.$row['key'];
+		}
+		array_push( $sitemap, $page_info );
+
+
 
 		$auto_id_num = 1;
 		$last_breadcrumb = array();
@@ -118,6 +83,12 @@ class pxplugin_sitemapExcel_daos_import{
 		$xlsx_row = $table_definition['row_data_start'];
 		while(1){
 			set_time_limit(30);
+
+			if( $objSheet->getCell('A'.$xlsx_row)->getValue() == 'EndOfData' ){
+				// A列が 'EndOfData' だったら、終了。
+				break;
+			}
+
 			$page_info = array();
 			$tmp_page_info = array();
 			foreach($sitemap_definition as $key=>$row){
@@ -196,7 +167,56 @@ class pxplugin_sitemapExcel_daos_import{
 
 		clearstatcache();
 		return true;
-	}
+	}// import_xlsx2sitemap()
+
+	/**
+	 * xlsxの構造定義設定を解析する
+	 */
+	private function parse_definition( $objPHPExcel, $sheetIndex = 0 ){
+		$rtn = array();
+		$objPHPExcel->setActiveSheetIndex($sheetIndex);
+		$objSheet = $objPHPExcel->getActiveSheet();
+
+		parse_str( $objSheet->getCell('A1')->getValue(), $rtn );
+		$rtn['row_definition'] = intval($rtn['row_definition']);
+		$rtn['row_data_start'] = intval($rtn['row_data_start']);
+
+		$rtn['col_define'] = array();
+
+		$mergedCells = $objSheet->getMergeCells();
+		$mergeInfo = array();
+		foreach( $mergedCells as $mergeRow ){
+			if( preg_match( '/^([a-zA-Z]+)'.$rtn['row_definition'].'\:([a-zA-Z]+)'.$rtn['row_definition'].'$/', $mergeRow, $matched ) ){
+				$mergeInfo[$matched[1]] = $matched[2];
+			}
+		}
+
+		$col = 'A';
+		while(1){
+			$def_key = $objSheet->getCell($col.$rtn['row_definition'])->getValue();
+			if(!strlen($def_key)){
+				break;
+			}
+
+			$rtn['col_define'][$def_key] = array(
+				'key'=>trim($def_key),
+				'col'=>$col,
+				// 'name'=>$def_name,
+			);
+
+			if( strlen($mergeInfo[$col]) ){
+				$mergeStartCol = $mergeInfo[$col];
+				while( $mergeStartCol >= $col ){
+					$col ++;
+				}
+			}else{
+				$col ++;
+			}
+		}
+
+
+		return $rtn;
+	}// parse_definition()
 
 }
 

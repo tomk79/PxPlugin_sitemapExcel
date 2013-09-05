@@ -87,7 +87,7 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 	}
 	private function page_import_input($error){
 		$src = '';
-		$src .= '<p>インポート機能は開発準備中です。</p>'."\n";
+		// $src .= '<p>インポート機能は開発準備中です。</p>'."\n";
 		$src .= '<form action="?" method="post" class="inline" enctype="multipart/form-data">'."\n";
 
 		$src .= '<table class="form_elements">'."\n";
@@ -238,6 +238,12 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 		$src .= '<form action="?" method="get" class="inline">'."\n";
 		$src .= '	<p class="center"><input type="submit" value="もう一度、インポートを実行する" /></p>'."\n";
 		$src .= '	<div><input type="hidden" name="PX" value="'.t::h(implode('.',array($this->command[0],$this->command[1],'import'))).'" /></div>'."\n";
+		$src .= '	<div><input type="hidden" name="mode" value="" /></div>'."\n";
+		$src .= '</form>'."\n";
+		$src .= '<hr />'."\n";
+		$src .= '<form action="?" method="get" class="inline">'."\n";
+		$src .= '	<p class="center"><input type="submit" value="戻る" /></p>'."\n";
+		$src .= '	<div><input type="hidden" name="PX" value="'.t::h(implode('.',array($this->command[0],$this->command[1]))).'" /></div>'."\n";
 		$src .= '	<div><input type="hidden" name="mode" value="" /></div>'."\n";
 		$src .= '</form>'."\n";
 		print $this->html_template($src);
