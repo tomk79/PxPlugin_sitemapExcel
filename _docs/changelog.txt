@@ -2,7 +2,7 @@
  * PxPlugin "sitemapExcel" 更新履歴
  */
 
-■PxPlugin sitemapExcel 0.0.1a2 (2013/**/**)
+■PxPlugin sitemapExcel 0.0.1b1 (2013/9/8)
 
 - アップロードした xlsx で直接サイトマップCSVを上書きできるようにした。
 - 設定シートをやめて、データシートのセルA1に設定を書くようにした。
