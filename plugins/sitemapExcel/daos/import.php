@@ -107,6 +107,10 @@ class pxplugin_sitemapExcel_daos_import{
 					$tmp_page_info['id'] = 'sitemapExcel_auto_id_'.($auto_id_num ++);
 				}
 			}
+			// トップページは空白でなければならない。
+			if( $path_toppage == $tmp_page_info['path'] ){
+				$tmp_page_info['id'] = '';
+			}
 
 			// タイトルだけ特別
 			$col_title_col = $col_title['start'];
