@@ -212,6 +212,8 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 			$tmp_sitemap_files = $this->px->dbh()->ls( $this->px->get_conf('paths.px_dir').'sitemaps/' );
 			foreach( $tmp_sitemap_files as $tmp_sitemap_files_basename ){
 				if( !strlen($tmp_sitemap_files_basename) ){ continue; }
+				if( is_dir( $this->px->get_conf('paths.px_dir').'sitemaps/'.$tmp_sitemap_files_basename ) ){ continue; } // ディレクトリは消さない。(旧式 .svn 対策の意味でも)
+				if( strtolower( $this->px->dbh()->get_extension( $tmp_sitemap_files_basename ) ) != 'csv' ){ continue; } // *.csv 以外は消さない。(バックアップファイルなどを考慮して)
 				if( !$this->px->dbh()->rm( $this->px->get_conf('paths.px_dir').'sitemaps/'.$tmp_sitemap_files_basename ) ){
 					$this->px->error()->error_log('FAILED to remove sitemap file "'.realpath($this->px->get_conf('paths.px_dir').'sitemaps/'.$tmp_sitemap_files_basename).'".', __FILE__, __LINE__);
 					print $this->html_template('[ERROR] FAILED to remove sitemap file "'.realpath($this->px->get_conf('paths.px_dir').'sitemaps/'.$tmp_sitemap_files_basename).'".');
