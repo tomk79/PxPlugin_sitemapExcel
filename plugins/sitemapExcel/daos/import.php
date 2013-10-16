@@ -51,18 +51,34 @@ class pxplugin_sitemapExcel_daos_import{
 
 		$table_definition = $this->parse_definition($objPHPExcel, 0);//xlsxの構造定義を読み解く
 		$col_title = array();
-		foreach($table_definition['col_define'] as $col_define){
+		foreach($table_definition['col_define'] as $tmp_col_define){
 			if( isset( $col_title['start'] ) ){
-				$col_title['end'] = $col_define['col'];
+				$col_title['end'] = $tmp_col_define['col'];
 				break;
 			}
-			if( $col_define['key'] == 'title' ){
-				$col_title['start'] = $col_define['col'];
+			if( $tmp_col_define['key'] == 'title' ){
+				$col_title['start'] = $tmp_col_define['col'];
 			}
 		}
+		unset($tmp_col_define);
 
 		$objPHPExcel->setActiveSheetIndex(0);
 		$objSheet = $objPHPExcel->getActiveSheet();
+
+		// xlsxにあってサイトマップ定義にないカスタムカラムを定義に反映
+		$xls_custom_column_definition = $table_definition['col_define'];
+		$tmp_last_elm_info = array();
+		foreach( $sitemap_definition as $tmp_row ){
+			unset($xls_custom_column_definition[$tmp_row['key']]);
+			$tmp_last_elm_info = $tmp_row;
+		}
+		foreach( $xls_custom_column_definition as $tmp_key=>$tmp_row ){
+			$tmp_last_elm_info['num']  ++;
+			$tmp_last_elm_info['col']  ++;
+			$tmp_last_elm_info['key']  = $tmp_row['key'];
+			$tmp_last_elm_info['name'] = $tmp_row['key'];
+			$sitemap_definition[$tmp_last_elm_info['key']] = $tmp_last_elm_info;
+		}
 
 
 
@@ -73,8 +89,6 @@ class pxplugin_sitemapExcel_daos_import{
 			$page_info[$row['key']] = '* '.$row['key'];
 		}
 		array_push( $sitemap, $page_info );
-
-
 
 		$auto_id_num = 1;
 		$last_breadcrumb = array();

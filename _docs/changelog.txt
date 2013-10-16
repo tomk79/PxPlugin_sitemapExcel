@@ -5,6 +5,7 @@
 ■PxPlugin sitemapExcel 0.0.1b2 (2013/**/**)
 
 - トップページに id がセットされている場合に、これを無視するようにした。
+- インポート時に、sitemap_definision.csv に記載のないカスタムカラムも、CSVに反映するようにした。
 
 
 ■PxPlugin sitemapExcel 0.0.1b1 (2013/9/8)
