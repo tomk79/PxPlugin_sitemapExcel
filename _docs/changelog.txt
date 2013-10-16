@@ -2,6 +2,11 @@
  * PxPlugin "sitemapExcel" 更新履歴
  */
 
+■PxPlugin sitemapExcel 0.5.0b2 (2013/**/**)
+
+- ********
+
+
 ■PxPlugin sitemapExcel 0.5.0b1 (2013/10/16)
 
 - トップページに id がセットされている場合に、これを無視するようにした。
