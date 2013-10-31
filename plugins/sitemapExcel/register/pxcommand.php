@@ -106,7 +106,9 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 			$src .= '	<li>'.t::h($error['file_xlsx']).'</li>'."\n";
 			$src .= '</ul>'."\n";
 		}
-		$src .= '				<input type="file" name="file_xlsx" value="" />'."\n";
+		$src .= '				ファイルを選択してください：<input type="file" name="file_xlsx" value="" />'."\n";
+		$src .= '				<p class="center">または</p>'."\n";
+		$src .= '				<div class="cont_file_upload_droppable"></div>'."\n";
 		$src .= '			</td>'."\n";
 		$src .= '		</tr>'."\n";
 		$src .= '		<tr'.(strlen($error['file_overwrite'])?' class="form_elements-error"':'').'>'."\n";
@@ -126,7 +128,90 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 		$src .= '	</tbody>'."\n";
 		$src .= '</table>'."\n";
 		$src .= ''."\n";
+		ob_start(); ?>
+			<script language="javascript">
+				$(function() {
+					var droppable = $('.cont_file_upload_droppable');
 
+					// File API が使用できない場合は諦めます.
+					if(!window.FileReader) {
+						droppable.hide();
+						alert('お使いのブラウザでは、File API がサポートされていません。');
+						return false;
+					}
+
+					droppable.css({
+						'border':'4px dashed #999999',
+						'margin':'1em',
+						'padding':'2em',
+						'text-align':'center',
+						'background-color':'#ffffdd',
+						'cursor':'crosshair'
+					}).html('ここにエクセルファイルをドロップしてください。');
+
+					// イベントをキャンセルするハンドラです.
+					function cancelEvent(event) {
+						event.preventDefault();
+						event.stopPropagation();
+						return false;
+					}
+
+					// dragenter, dragover イベントのデフォルト処理をキャンセルします.
+					droppable.bind("dradenter", cancelEvent);
+					droppable.bind("dragover", cancelEvent);
+					droppable.bind("mousedown", cancelEvent);
+					droppable.bind("click", cancelEvent);
+
+
+					// ドロップ時のイベントハンドラを設定します.
+					function handleDroppedFile(event) {
+						// ファイルは複数ドロップされる可能性がありますが, 
+						// ここでは 1 つ目のファイルを扱います.
+						var file = event.originalEvent.dataTransfer.files[0];
+						// $("input[name='file_xlsx']").val(file);
+
+						var altxt = '';
+						altxt += 'name = '+file.name+"\n";
+						altxt += 'type = '+file.type+"\n";
+						altxt += 'size = '+file.size+"\n";
+						altxt += 'このファイルで上書きアップロードしてもよろしいですか？';
+						if( !confirm(altxt) ){
+							return false;
+						}
+
+						// FormData オブジェクトを用意
+						var fd = new FormData();
+						fd.append("file_xlsx", file);
+						fd.append("file_overwrite", $("input:radio[name='file_overwrite']:checked").val());
+						fd.append("mode", $('input[name=mode]').val());
+						fd.append("PX", $('input[name=PX]').val());
+
+						// XHR送信
+						$.ajax({
+							url: "?",
+							type: "POST",
+							data: fd,
+							processData: false,
+							contentType: false,
+							success:function(data){
+								alert('アップロードしました。');
+							},
+							error:function(){
+								alert('ERROR: アップロードに失敗しました。');
+							}
+						});
+
+						// デフォルトの処理をキャンセルします.
+						cancelEvent(event);
+						return false;
+					}
+
+					// ドロップ時のイベントハンドラを設定します.
+					droppable.bind("drop", handleDroppedFile);
+				});
+			</script>
+<?php
+		$src .= ob_get_clean();
 		$src .= '	<p class="center"><input type="submit" value="インポートを実行する" /></p>'."\n";
 		$src .= '	<div><input type="hidden" name="PX" value="'.t::h(implode('.',array($this->command[0],$this->command[1],'import'))).'" /></div>'."\n";
 		$src .= '	<div><input type="hidden" name="mode" value="execute" /></div>'."\n";
