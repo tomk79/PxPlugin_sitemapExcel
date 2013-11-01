@@ -375,7 +375,7 @@ class pxplugin_sitemapExcel_daos_export{
 		$path = preg_replace('/^alias\:(javascript|https?)\:/si','$1:',$path);
 		$path = preg_replace('/^alias\:\#/si','#',$path);
 		if( preg_match('/^(?:alias\:)?\//s', $path) ){
-			$path = preg_replace('/\/index\.html((?:\?|\#).*)?$/s', '/$1', $path);
+			$path = preg_replace('/\/'.$this->px->get_directory_index_preg_pattern().'((?:\?|\#).*)?$/s', '/$1', $path);
 		}
 		return $path;
 	}
@@ -386,7 +386,7 @@ class pxplugin_sitemapExcel_daos_export{
 	private function repair_page_id($page_id, $path){
 		$page_id = preg_replace('/^\:auto_page_id\.[0-9]+$/si', '', $page_id);
 		$tmp_path = $path;
-		$tmp_path = preg_replace('/\/index\.html$/si', '/', $tmp_path);
+		$tmp_path = preg_replace('/\/'.$this->px->get_directory_index_preg_pattern().'$/si', '/', $tmp_path);
 		$tmp_path = preg_replace('/\.(?:html)$/si', '', $tmp_path);
 		$tmp_path = preg_replace('/^\/+/si', '', $tmp_path);
 		$tmp_path = preg_replace('/\/+$/si', '', $tmp_path);
