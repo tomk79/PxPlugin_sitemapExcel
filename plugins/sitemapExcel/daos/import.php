@@ -95,8 +95,10 @@ class pxplugin_sitemapExcel_daos_import{
 		$last_page_id = null;
 		$logical_path_last_depth = 0;
 		$xlsx_row = $table_definition['row_data_start'];
+		$xlsx_row --;
 		while(1){
 			set_time_limit(30);
+			$xlsx_row ++;
 
 			if( $objSheet->getCell('A'.$xlsx_row)->getValue() == 'EndOfData' ){
 				// A列が 'EndOfData' だったら、終了。
@@ -112,6 +114,10 @@ class pxplugin_sitemapExcel_daos_import{
 				}else{
 					$tmp_page_info[$row['key']] = '';
 				}
+			}
+			if( $tmp_page_info['**del_flg'] ){
+				// 削除フラグ
+				continue;
 			}
 
 			// 省略されたIDを自動的に付与
@@ -175,8 +181,6 @@ class pxplugin_sitemapExcel_daos_import{
 			}
 
 			array_push( $sitemap, $page_info );
-
-			$xlsx_row ++;
 			continue;
 		}
 

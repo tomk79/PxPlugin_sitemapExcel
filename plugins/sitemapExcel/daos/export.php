@@ -245,7 +245,7 @@ class pxplugin_sitemapExcel_daos_export{
 	 */
 	private function mk_xlsx_body($objSheet, $page_id = ''){
 		if(!is_string($page_id)){return false;}
-		$sitemap_definition = $this->px->site()->get_sitemap_definition();
+		$sitemap_definition = $this->get_sitemap_definition();
 		$table_definition = $this->get_table_definition();
 		$page_info = $this->px->site()->get_page_info($page_id);
 		if(!is_array($page_info)){
@@ -420,7 +420,7 @@ class pxplugin_sitemapExcel_daos_export{
 		$rtn['col_define']['title_label'] = array( 'col'=>($current_col++) );
 		$rtn['col_define']['title_breadcrumb'] = array( 'col'=>($current_col++) );
 
-		$sitemap_definition = $this->px->site()->get_sitemap_definition();
+		$sitemap_definition = $this->get_sitemap_definition();
 		foreach($sitemap_definition as $def_row){
 			if($def_row['key'] == 'logical_path'){continue;}
 
@@ -431,6 +431,19 @@ class pxplugin_sitemapExcel_daos_export{
 			$rtn['col_define'][$def_row['key']]['col'] = ($current_col++);
 		}
 
+		return $rtn;
+	}
+
+	/**
+	 * サイトマップ定義を取得する
+	 */
+	private function get_sitemap_definition(){
+		$rtn = $this->px->site()->get_sitemap_definition();
+		if( !is_array($rtn['**del_flg']) ){
+			$rtn['**del_flg'] = array();
+			$rtn['**del_flg']['name'] = '削除フラグ';
+			$rtn['**del_flg']['key'] = '**del_flg';
+		}
 		return $rtn;
 	}
 
