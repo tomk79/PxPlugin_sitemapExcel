@@ -4,7 +4,7 @@
 
 ■PxPlugin sitemapExcel 0.5.0b2 (2013/**/**)
 
-- 行ごとコメントアウトする機能を追加。カラム「**del_flg」に値を入れる。
+- 行ごとコメントアウトする機能を追加。カラム「**delete_flg」に値を入れる。
 
 
 ■PxPlugin sitemapExcel 0.5.0b1 (2013/10/16)

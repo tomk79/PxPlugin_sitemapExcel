@@ -115,7 +115,7 @@ class pxplugin_sitemapExcel_daos_import{
 					$tmp_page_info[$row['key']] = '';
 				}
 			}
-			if( $tmp_page_info['**del_flg'] ){
+			if( $tmp_page_info['**delete_flg'] ){
 				// 削除フラグ
 				continue;
 			}

@@ -439,10 +439,10 @@ class pxplugin_sitemapExcel_daos_export{
 	 */
 	private function get_sitemap_definition(){
 		$rtn = $this->px->site()->get_sitemap_definition();
-		if( !is_array($rtn['**del_flg']) ){
-			$rtn['**del_flg'] = array();
-			$rtn['**del_flg']['name'] = '削除フラグ';
-			$rtn['**del_flg']['key'] = '**del_flg';
+		if( !is_array($rtn['**delete_flg']) ){
+			$rtn['**delete_flg'] = array();
+			$rtn['**delete_flg']['name'] = '削除フラグ';
+			$rtn['**delete_flg']['key'] = '**delete_flg';
 		}
 		return $rtn;
 	}
