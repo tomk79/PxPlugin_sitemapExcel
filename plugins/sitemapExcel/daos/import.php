@@ -100,7 +100,7 @@ class pxplugin_sitemapExcel_daos_import{
 			set_time_limit(30);
 			$xlsx_row ++;
 
-			if( $objSheet->getCell('A'.$xlsx_row)->getValue() == 'EndOfData' ){
+			if( $objSheet->getCell('A'.$xlsx_row)->getCalculatedValue() == 'EndOfData' ){
 				// A列が 'EndOfData' だったら、終了。
 				break;
 			}
@@ -110,7 +110,7 @@ class pxplugin_sitemapExcel_daos_import{
 			foreach($sitemap_definition as $key=>$row){
 				$tmp_col_name = $table_definition['col_define'][$row['key']]['col'];
 				if(strlen($tmp_col_name)){
-					$tmp_page_info[$row['key']] = $objSheet->getCell($tmp_col_name.$xlsx_row)->getValue();
+					$tmp_page_info[$row['key']] = $objSheet->getCell($tmp_col_name.$xlsx_row)->getCalculatedValue();
 				}else{
 					$tmp_page_info[$row['key']] = '';
 				}
@@ -137,7 +137,7 @@ class pxplugin_sitemapExcel_daos_import{
 			$tmp_page_info['title'] = '';
 			$logical_path_depth = 0;
 			while($col_title_col < $col_title['end']){
-				$tmp_page_info['title'] .= trim( $objSheet->getCell($col_title_col.$xlsx_row)->getValue() );
+				$tmp_page_info['title'] .= trim( $objSheet->getCell($col_title_col.$xlsx_row)->getCalculatedValue() );
 				if(strlen($tmp_page_info['title'])){
 					break;
 				}
@@ -199,7 +199,7 @@ class pxplugin_sitemapExcel_daos_import{
 		$objPHPExcel->setActiveSheetIndex($sheetIndex);
 		$objSheet = $objPHPExcel->getActiveSheet();
 
-		parse_str( $objSheet->getCell('A1')->getValue(), $rtn );
+		parse_str( $objSheet->getCell('A1')->getCalculatedValue(), $rtn );
 		$rtn['row_definition'] = intval($rtn['row_definition']);
 		$rtn['row_data_start'] = intval($rtn['row_data_start']);
 
@@ -215,7 +215,7 @@ class pxplugin_sitemapExcel_daos_import{
 
 		$col = 'A';
 		while(1){
-			$def_key = $objSheet->getCell($col.$rtn['row_definition'])->getValue();
+			$def_key = $objSheet->getCell($col.$rtn['row_definition'])->getCalculatedValue();
 			if(!strlen($def_key)){
 				break;
 			}
