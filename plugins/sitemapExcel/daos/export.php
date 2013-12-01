@@ -407,6 +407,7 @@ class pxplugin_sitemapExcel_daos_export{
 		$rtn = array();
 		$rtn['row_definition'] = 8;
 		$rtn['row_data_start'] = $rtn['row_definition']+1;
+		$rtn['skip_empty_col'] = 20;
 		$rtn['col_define'] = array();
 
 		$current_col = 'A';

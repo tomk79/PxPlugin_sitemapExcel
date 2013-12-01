@@ -202,6 +202,7 @@ class pxplugin_sitemapExcel_daos_import{
 		parse_str( $objSheet->getCell('A1')->getCalculatedValue(), $rtn );
 		$rtn['row_definition'] = intval($rtn['row_definition']);
 		$rtn['row_data_start'] = intval($rtn['row_data_start']);
+		$rtn['skip_empty_col'] = intval($rtn['skip_empty_col']);
 
 		$rtn['col_define'] = array();
 
@@ -214,11 +215,18 @@ class pxplugin_sitemapExcel_daos_import{
 		}
 
 		$col = 'A';
+		$skip_count = 0;
 		while(1){
 			$def_key = $objSheet->getCell($col.$rtn['row_definition'])->getCalculatedValue();
 			if(!strlen($def_key)){
-				break;
+				$skip_count ++;
+				$col ++;
+				if( $skip_count > $rtn['skip_empty_col'] ){
+					break;
+				}
+				continue;
 			}
+			$skip_count = 0;
 
 			$rtn['col_define'][$def_key] = array(
 				'key'=>trim($def_key),
