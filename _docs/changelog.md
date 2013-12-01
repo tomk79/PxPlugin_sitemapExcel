@@ -1,10 +1,11 @@
 
 # PxPlugin "sitemapExcel" 更新履歴
 
-## PxPlugin sitemapExcel 0.5.0b2 (2013/**/**)
+## PxPlugin sitemapExcel 0.5.0b2 (2013/\*\*/\*\*)
 
-- 行ごとコメントアウトする機能を追加。カラム「**delete_flg」に値を入れる。
+- 行ごとコメントアウトする機能を追加。カラム「\**delete_flg」に値を入れる。
 - 設定項目に skip_empty_col を追加。定義行が空白の列があっても、skip_empty_colの数まで右を調べる。
+- セルに計算式がセットされている場合、計算式ではなく計算結果を取得するように変更した。
 
 
 ## PxPlugin sitemapExcel 0.5.0b1 (2013/10/16)
