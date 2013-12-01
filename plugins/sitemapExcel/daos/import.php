@@ -90,7 +90,6 @@ class pxplugin_sitemapExcel_daos_import{
 		}
 		array_push( $sitemap, $page_info );
 
-		$auto_id_num = 1;
 		$last_breadcrumb = array();
 		$last_page_id = null;
 		$logical_path_last_depth = 0;
@@ -124,7 +123,7 @@ class pxplugin_sitemapExcel_daos_import{
 			if(!strlen($tmp_page_info['id'])){
 				// トップページは空白でなければならない。
 				if( $path_toppage != $tmp_page_info['path'] ){
-					$tmp_page_info['id'] = 'sitemapExcel_auto_id_'.($auto_id_num ++);
+					$tmp_page_info['id'] = $this->generate_auto_page_id();
 				}
 			}
 			// トップページは空白でなければならない。
@@ -190,6 +189,16 @@ class pxplugin_sitemapExcel_daos_import{
 		clearstatcache();
 		return true;
 	}// import_xlsx2sitemap()
+
+	/**
+	 * ページIDを自動生成する
+	 */
+	private function generate_auto_page_id(){
+		static $auto_id_num = 0;
+		$auto_id_num ++;
+		$rtn = 'sitemapExcel_auto_id_'.intval($auto_id_num);
+		return $rtn;
+	}//generate_auto_page_id()
 
 	/**
 	 * xlsxの構造定義設定を解析する
