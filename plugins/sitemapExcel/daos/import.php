@@ -135,14 +135,22 @@ class pxplugin_sitemapExcel_daos_import{
 			$col_title_col = $col_title['start'];
 			$tmp_page_info['title'] = '';
 			$logical_path_depth = 0;
+			$alias_title_list = array();
 			while($col_title_col < $col_title['end']){
 				$tmp_page_info['title'] .= trim( $objSheet->getCell($col_title_col.$xlsx_row)->getCalculatedValue() );
 				if(strlen($tmp_page_info['title'])){
+					$col_title_col ++;
+					while( strlen( $tmp_alias_title = trim( $objSheet->getCell(($col_title_col).$xlsx_row)->getCalculatedValue() ) ) ){
+						array_push( $alias_title_list, $tmp_alias_title );
+						$col_title_col ++;
+					}
 					break;
 				}
 				$col_title_col ++;
 				$logical_path_depth ++;
 			}
+			unset($col_title_col);
+			unset($tmp_alias_title);
 
 			// パンくずも特別
 			$tmp_breadcrumb = $last_breadcrumb;
@@ -179,7 +187,41 @@ class pxplugin_sitemapExcel_daos_import{
 				$page_info[$row['key']] = $tmp_page_info[$row['key']];
 			}
 
-			array_push( $sitemap, $page_info );
+			// サイトマップにページを追加する
+			if( count($alias_title_list) ){
+				// エイリアスが省略されている場合
+				$page_info_base = $page_info;
+				$page_info['path'] = 'alias:'.$page_info['path'];
+				array_push( $sitemap, $page_info );
+				$tmp_last_page_id = $page_info['id'];
+				foreach( $alias_title_list as $key=>$row ){
+					$page_info = $page_info_base;
+					if( count($alias_title_list) > $key+1 ){
+						// 最後の1件以外なら
+						$page_info['path'] = 'alias:'.$page_info['path'];
+					}
+					array_push($tmp_breadcrumb, $tmp_last_page_id);
+					$page_info['logical_path'] = implode('>', $tmp_breadcrumb);
+					$page_info['logical_path'] = preg_replace('/^\>/s', '', $page_info['logical_path']);
+					$page_info['id'] = $this->generate_auto_page_id();
+					$page_info['title'] = $row;
+
+					array_push( $sitemap, $page_info );
+
+					$tmp_last_page_id = $page_info['id'];
+					$logical_path_last_depth ++;
+					$last_breadcrumb = $tmp_breadcrumb;
+					$last_page_id = $tmp_last_page_id;
+				}
+
+				unset($page_info_base);
+				unset($tmp_last_page_id);
+				continue;
+			}else{
+				// 通常のページの場合
+				array_push( $sitemap, $page_info );
+				continue;
+			}
 			continue;
 		}
 
