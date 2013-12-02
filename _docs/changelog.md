@@ -1,6 +1,11 @@
 
 # PxPlugin "sitemapExcel" 更新履歴
 
+## PxPlugin sitemapExcel 0.5.0b3 (2013/\*\*/\*\*)
+
+- \*\*\*\*\*\*\*\*\*
+
+
 ## PxPlugin sitemapExcel 0.5.0b2 (2013/12/2)
 
 - 行ごとコメントアウトする機能を追加。カラム「\**delete_flg」に値を入れる。
