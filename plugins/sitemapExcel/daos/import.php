@@ -47,6 +47,7 @@ class pxplugin_sitemapExcel_daos_import{
 		if( !$phpExcelHelper ){
 			return false;
 		}
+		set_time_limit(0);
 		$objPHPExcel = $phpExcelHelper->load($path_xlsx);
 
 		$table_definition = $this->parse_definition($objPHPExcel, 0);//xlsxの構造定義を読み解く
@@ -227,6 +228,8 @@ class pxplugin_sitemapExcel_daos_import{
 
 		$this->px->dbh()->mkdir(dirname($path_csv));
 		$this->px->dbh()->file_overwrite($path_csv, $this->px->dbh()->mk_csv_utf8($sitemap) );
+
+		set_time_limit(30);
 
 		clearstatcache();
 		return true;
