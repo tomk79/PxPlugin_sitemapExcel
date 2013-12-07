@@ -20,19 +20,19 @@
 
 PxFW および PHPExcel の要件を参照。
 
-- http://pickles.pxt.jp/setup/requirement/
- - Linux系サーバ または Windowsサーバ
- - Apache1.3以降
-  - mod_rewrite が利用可能であること
-  - .htaccess が利用可能であること
- - PHP5系
-  - mb_string が有効に設定されていること
-  - safe_mode が無効に設定されていること
-- http://phpexcel.codeplex.com/wikipage?title=Requirements&referringTitle=Home
- - PHP version 5.2.0 or higher
- - PHP extension php_zip enabled *)
- - PHP extension php_xml enabled
- - PHP extension php_gd2 enabled (if not compiled in)
+- Pickles Framework requirement http://pickles.pxt.jp/setup/requirement/
+	- Linux系サーバ または Windowsサーバ
+	- Apache1.3以降
+		- mod_rewrite が利用可能であること
+		- .htaccess が利用可能であること
+	- PHP5系
+		- mb_string が有効に設定されていること
+		- safe_mode が無効に設定されていること
+- PHPExcel requirement http://phpexcel.codeplex.com/wikipage?title=Requirements&referringTitle=Home
+	- PHP version 5.2.0 or higher
+	- PHP extension php_zip enabled *)
+	- PHP extension php_xml enabled
+	- PHP extension php_gd2 enabled (if not compiled in)
 
 ## Pickles Framework(PxFW) について
 

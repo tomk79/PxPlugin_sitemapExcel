@@ -124,6 +124,11 @@ class pxplugin_sitemapExcel_daos_import{
 				// pathが空白なら終わったものと思う。
 				break;
 			}
+			if( !array_key_exists('list_flg', $xls_custom_column_definition) ){
+				// エクセルの定義にlist_flg列がなかったら、
+				// 全ページにlist_flg=1をセット。
+				$tmp_page_info['list_flg'] = 1;
+			}
 
 			// 読み込んだパスを正規化
 			$tmp_page_info['path'] = $this->regulize_path( $tmp_page_info['path'] );

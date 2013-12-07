@@ -319,7 +319,7 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 		// return $this->px->redirect( $this->href().'&mode=thanks' );
 
 	}
-	private function page_import_thanks($error){
+	private function page_import_thanks(){
 		$src = '';
 		$src .= '<p>インポートしました。</p>'."\n";
 		$src .= '<form action="?" method="get" class="inline">'."\n";
