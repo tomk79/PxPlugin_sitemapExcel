@@ -41,6 +41,7 @@ class pxplugin_sitemapExcel_daos_import{
 		if( strlen($this->px->get_conf('project.path_top')) ){
 			$path_toppage = $this->px->get_conf('project.path_top');
 		}
+		$path_toppage = $this->regulize_path( $path_toppage );
 
 		$sitemap_definition = $this->px->site()->get_sitemap_definition();
 		$phpExcelHelper = $this->factory_PHPExcelHelper();
@@ -119,6 +120,13 @@ class pxplugin_sitemapExcel_daos_import{
 				// 削除フラグ
 				continue;
 			}
+			if(!strlen( $tmp_page_info['path'] )){
+				// pathが空白なら終わったものと思う。
+				break;
+			}
+
+			// 読み込んだパスを正規化
+			$tmp_page_info['path'] = $this->regulize_path( $tmp_page_info['path'] );
 
 			// 省略されたIDを自動的に付与
 			if(!strlen($tmp_page_info['id'])){
@@ -127,6 +135,7 @@ class pxplugin_sitemapExcel_daos_import{
 					$tmp_page_info['id'] = $this->generate_auto_page_id();
 				}
 			}
+
 			// トップページは空白でなければならない。
 			if( $path_toppage == $tmp_page_info['path'] ){
 				$tmp_page_info['id'] = '';
@@ -160,7 +169,9 @@ class pxplugin_sitemapExcel_daos_import{
 			}elseif( $logical_path_last_depth < $logical_path_depth ){
 				// 前回の深さより深くなっていたら
 				$tmp_breadcrumb = $last_breadcrumb;
-				array_push($tmp_breadcrumb, $last_page_id );
+				if( strlen($last_page_id) ){
+					array_push($tmp_breadcrumb, $last_page_id );
+				}
 			}elseif( $logical_path_last_depth > $logical_path_depth ){
 				// 前回の深さより浅くなっていたら
 				$tmp_breadcrumb = array();
@@ -177,11 +188,6 @@ class pxplugin_sitemapExcel_daos_import{
 			$logical_path_last_depth = $logical_path_depth;
 			$last_breadcrumb = $tmp_breadcrumb;
 			$last_page_id = $tmp_page_info['id'];
-
-			if(!strlen( $tmp_page_info['path'] )){
-				// pathが空白なら終わったものと思う。
-				break;
-			}
 
 			$page_info = array();
 			foreach($sitemap_definition as $row){
@@ -244,6 +250,17 @@ class pxplugin_sitemapExcel_daos_import{
 		$rtn = 'sitemapExcel_auto_id_'.intval($auto_id_num);
 		return $rtn;
 	}//generate_auto_page_id()
+
+	/**
+	 * パス文字列の正規化
+	 */
+	private function regulize_path($path){
+		$parsed_url = parse_url($path);
+		$path_path = preg_replace( '/(?:\?|\#).*$/', '', $path);
+		$path_path = preg_replace( '/\/$/s', '/'.$this->px->get_directory_index_primary(), $path_path);
+		$path = $path_path.(strlen($parsed_url['query'])?'?'.$parsed_url['query']:'').(strlen($parsed_url['fragment'])?'#'.$parsed_url['fragment']:'');
+		return $path;
+	}//regulize_path()
 
 	/**
 	 * xlsxの構造定義設定を解析する
