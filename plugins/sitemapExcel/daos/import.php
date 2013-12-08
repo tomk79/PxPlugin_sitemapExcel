@@ -174,9 +174,7 @@ class pxplugin_sitemapExcel_daos_import{
 			}elseif( $logical_path_last_depth < $logical_path_depth ){
 				// 前回の深さより深くなっていたら
 				$tmp_breadcrumb = $last_breadcrumb;
-				if( strlen($last_page_id) ){
-					array_push($tmp_breadcrumb, $last_page_id );
-				}
+				array_push($tmp_breadcrumb, $last_page_id );
 			}elseif( $logical_path_last_depth > $logical_path_depth ){
 				// 前回の深さより浅くなっていたら
 				$tmp_breadcrumb = array();
