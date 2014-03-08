@@ -310,7 +310,7 @@ class pxplugin_sitemapExcel_daos_import{
 
 			if( strlen($mergeInfo[$col]) ){
 				$mergeStartCol = $mergeInfo[$col];
-				while( $mergeStartCol >= $col ){
+				while( strcmp($mergeStartCol, $col) ){
 					$col ++;
 				}
 			}else{
