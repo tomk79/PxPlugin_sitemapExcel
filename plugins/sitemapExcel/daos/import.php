@@ -151,7 +151,7 @@ class pxplugin_sitemapExcel_daos_import{
 			$tmp_page_info['title'] = '';
 			$logical_path_depth = 0;
 			$alias_title_list = array();
-			while($col_title_col < $col_title['end']){
+			while( strcmp( $col_title_col , $col_title['end'] ) ){
 				$tmp_page_info['title'] .= trim( $objSheet->getCell($col_title_col.$xlsx_row)->getCalculatedValue() );
 				if(strlen($tmp_page_info['title'])){
 					$col_title_col ++;
