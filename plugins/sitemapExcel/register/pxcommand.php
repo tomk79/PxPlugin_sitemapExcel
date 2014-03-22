@@ -74,8 +74,29 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 	private function page_import(){
 		$this->set_title('インポートする');
 		$error = $this->check_import_check();
-		if( $this->px->req()->get_param('mode') == 'execute' && !count($error) ){
-			return $this->execute_import_execute();
+
+		if( count($error) && $this->px->req()->get_param('format') == 'json' ){
+			// JSONを返す
+			header( 'Content-type: application/json' );
+			$error_msg = '';
+			foreach( $error as $error_row ){
+				$error_msg .= $error_row;
+			}
+			print t::data2jssrc(
+				array(
+					'result'=>'failed',
+					'error_msg'=>$error_msg
+				)
+			);
+			exit;
+		}
+
+		if( $this->px->req()->get_param('mode') == 'upload' && !count($error) ){
+			return $this->execute_import_upload();
+		}elseif( $this->px->req()->get_param('mode') == 'execute' ){
+			return $this->page_import_execute();
+		}elseif( $this->px->req()->get_param('mode') == 'import' ){
+			return $this->execute_import_import();
 		}elseif( $this->px->req()->get_param('mode') == 'thanks' ){
 			return $this->page_import_thanks();
 		}elseif( !strlen($this->px->req()->get_param('mode')) ){
@@ -89,6 +110,8 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 		$src = '';
 		// $src .= '<p>インポート機能は開発準備中です。</p>'."\n";
 		$src .= '<form action="?" method="post" class="inline" enctype="multipart/form-data">'."\n";
+		$src .= '	<div><input type="hidden" name="PX" value="'.t::h(implode('.',array($this->command[0],$this->command[1],'import'))).'" /></div>'."\n";
+		$src .= '	<div><input type="hidden" name="mode" value="upload" /></div>'."\n";
 
 		$src .= '<table class="form_elements">'."\n";
 		$src .= '	<thead>'."\n";
@@ -98,19 +121,6 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 		$src .= '		</tr>'."\n";
 		$src .= '	</thead>'."\n";
 		$src .= '	<tbody>'."\n";
-		$src .= '		<tr'.(strlen($error['file_xlsx'])?' class="form_elements-error"':'').'>'."\n";
-		$src .= '			<th>サイトマップ(xlsx形式)</th>'."\n";
-		$src .= '			<td>'."\n";
-		if( strlen($error['file_xlsx']) ){
-			$src .= '<ul class="form_elements-errors">'."\n";
-			$src .= '	<li>'.t::h($error['file_xlsx']).'</li>'."\n";
-			$src .= '</ul>'."\n";
-		}
-		$src .= '				ファイルを選択してください：<input type="file" name="file_xlsx" value="" />'."\n";
-		$src .= '				<p class="center">または</p>'."\n";
-		$src .= '				<div class="cont_file_upload_droppable"></div>'."\n";
-		$src .= '			</td>'."\n";
-		$src .= '		</tr>'."\n";
 		$src .= '		<tr'.(strlen($error['file_overwrite'])?' class="form_elements-error"':'').'>'."\n";
 		$src .= '			<th>サイトマップCSVの上書き</th>'."\n";
 		$src .= '			<td>'."\n";
@@ -125,6 +135,23 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 		$src .= '				</ul>'."\n";
 		$src .= '			</td>'."\n";
 		$src .= '		</tr>'."\n";
+		$src .= '		<tr'.(strlen($error['file_xlsx'])?' class="form_elements-error"':'').'>'."\n";
+		$src .= '			<th>サイトマップ(xlsx形式)</th>'."\n";
+		$src .= '			<td>'."\n";
+		if( strlen($error['file_xlsx']) ){
+			$src .= '<ul class="form_elements-errors">'."\n";
+			$src .= '	<li>'.t::h($error['file_xlsx']).'</li>'."\n";
+			$src .= '</ul>'."\n";
+		}
+		$src .= '				エクセルファイルを選択してください：<input type="file" name="file_xlsx" value="" />'."\n";
+		$src .= '				<p class="center"><input type="submit" value="インポートを実行する" /></p>'."\n";
+		$src .= '				<div class="cont_file_upload_droppable_wrap">'."\n";
+		$src .= '					<hr />'."\n";
+		$src .= '					<p class="center">または</p>'."\n";
+		$src .= '					<div class="cont_file_upload_droppable"></div>'."\n";
+		$src .= '				</div>'."\n";
+		$src .= '			</td>'."\n";
+		$src .= '		</tr>'."\n";
 		$src .= '	</tbody>'."\n";
 		$src .= '</table>'."\n";
 		$src .= ''."\n";
@@ -135,8 +162,7 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 
 					// File API が使用できない場合は諦めます.
 					if(!window.FileReader) {
-						droppable.hide();
-						alert('お使いのブラウザでは、File API がサポートされていません。');
+						$('.cont_file_upload_droppable_wrap').hide();
 						return false;
 					}
 
@@ -147,7 +173,7 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 						'text-align':'center',
 						'background-color':'#ffffdd',
 						'cursor':'crosshair'
-					}).html('ここにエクセルファイルをドロップしてください。');
+					}).html('ここにエクセルファイルをドロップしてインポート');
 
 					// イベントをキャンセルするハンドラです.
 					function cancelEvent(event) {
@@ -173,8 +199,12 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 						var altxt = '';
 						altxt += 'name = '+file.name+"\n";
 						altxt += 'type = '+file.type+"\n";
-						altxt += 'size = '+file.size+"\n";
-						altxt += 'このファイルで上書きアップロードしてもよろしいですか？';
+						altxt += 'size = '+file.size+' bytes'+"\n";
+						if( $('input:radio[name=file_overwrite]:checked').val() ){
+							altxt += 'このファイルで上書きアップロードしてもよろしいですか？';
+						}else{
+							altxt += 'このファイルでCSVを作成しますか？';
+						}
 						if( !confirm(altxt) ){
 							return false;
 						}
@@ -182,9 +212,10 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 						// FormData オブジェクトを用意
 						var fd = new FormData();
 						fd.append("file_xlsx", file);
-						fd.append("file_overwrite", $("input:radio[name='file_overwrite']:checked").val());
+						fd.append("file_overwrite", $('input:radio[name=file_overwrite]:checked').val());
 						fd.append("mode", $('input[name=mode]').val());
 						fd.append("PX", $('input[name=PX]').val());
+						fd.append("format", 'json');
 
 						// XHR送信
 						$.ajax({
@@ -194,10 +225,24 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 							processData: false,
 							contentType: false,
 							success:function(data){
-								alert('アップロードしました。');
+								if( data.result != 'success' ){
+									alert('ERROR: アップロードに失敗しました。'+data.error_msg);
+									return false;
+								}
+								var form = $('<form />');
+								form
+									.attr({
+										'action':'?' ,
+										'method':'post'
+									})
+									.append( $('<input />').attr({'name':'PX','value':$('input[name=PX]').val()}) )
+									.append( $('<input />').attr({'name':'file_overwrite','value':$('input:radio[name=file_overwrite]:checked').val()}) )
+									.append( $('<input />').attr({'name':'mode','value':'execute'}) )
+									.submit()
+								;
 							},
 							error:function(){
-								alert('ERROR: アップロードに失敗しました。');
+								alert('ERROR: アップロードに失敗しました。しばらくしたらもう一度お試しください。');
 							}
 						});
 
@@ -212,9 +257,6 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 			</script>
 <?php
 		$src .= ob_get_clean();
-		$src .= '	<p class="center"><input type="submit" value="インポートを実行する" /></p>'."\n";
-		$src .= '	<div><input type="hidden" name="PX" value="'.t::h(implode('.',array($this->command[0],$this->command[1],'import'))).'" /></div>'."\n";
-		$src .= '	<div><input type="hidden" name="mode" value="execute" /></div>'."\n";
 		$src .= '</form>'."\n";
 		print $this->html_template($src);
 		exit;
@@ -255,7 +297,84 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 		}
 		return $rtn;
 	}
-	private function execute_import_execute(){
+	private function execute_import_upload(){
+
+		$path_xlsx = $this->path_data_dir.'sitemapExcel.xlsx';
+		if( !$this->px->dbh()->mkdir_all( dirname($path_xlsx) ) ){
+			$error_msg = 'FAILED to make a directory ['.dirname($path_xlsx).'].';
+			$this->px->error()->error_log($error_msg, __FILE__, __LINE__);
+			if( $this->px->req()->get_param('format') == 'json' ){
+				header( 'Content-type: application/json' );
+				print t::data2jssrc( array( 'result'=>'failed', 'error_msg'=>$error_msg ) );
+			}else{
+				print $this->html_template('[ERROR] '.$error_msg);
+			}
+			exit;
+		}
+
+		$ulfileinfo = $this->px->req()->get_uploadfile('file_xlsx');
+		if( !$this->px->dbh()->file_overwrite( $path_xlsx, $ulfileinfo['content'] ) ){
+			$error_msg = 'FAILED to update inner xlsx.';
+			$this->px->error()->error_log($error_msg, __FILE__, __LINE__);
+			if( $this->px->req()->get_param('format') == 'json' ){
+				header( 'Content-type: application/json' );
+				print t::data2jssrc( array( 'result'=>'failed', 'error_msg'=>$error_msg ) );
+			}else{
+				print $this->html_template('[ERROR] '.$error_msg);
+			}
+			exit;
+		}
+
+		clearstatcache();
+		$this->px->req()->delete_uploadfile_all();// セッション上の一時ファイルを削除
+		clearstatcache();
+
+		if( $this->px->req()->get_param('format') == 'json' ){
+			header( 'Content-type: application/json' );
+			print t::data2jssrc( array( 'result'=>'success' ) );
+			exit;
+		}
+		return $this->px->redirect( $this->href().'&mode=execute&file_overwrite='.$this->px->req()->get_param('file_overwrite') );
+	}
+	private function page_import_execute(){
+		$src = '';
+		$src .= '<form action="?" method="post" class="inline cont_main_form" enctype="multipart/form-data">'."\n";
+		$src .= '	<div><input type="hidden" name="PX" value="'.t::h(implode('.',array($this->command[0],$this->command[1],'import'))).'" /></div>'."\n";
+		$src .= '	<div><input type="hidden" name="mode" value="import" /></div>'."\n";
+		$src .= '	<div><input type="hidden" name="file_overwrite" value="'.t::h($this->px->req()->get_param('file_overwrite')).'" /></div>'."\n";
+
+		ob_start(); ?>
+<div class="cont_progress_msg" style="display:none;">
+<?php if( $this->px->req()->get_param('file_overwrite') ){ ?>
+	<!-- thanx : http://loadergenerator.com/ -->
+	<p class="center"><img src="data:image/gif;base64,<?php print t::h( base64_encode( $this->px->dbh()->file_get_contents( $this->px->get_conf('paths.px_dir').'plugins/sitemapExcel/plugin.files/images/loading.gif' ) ) ); ?>" alt="実行しています" /></p>
+	<p class="center">サイトマップを反映しています。しばらくお待ちください...。</p>
+<?php }else{ ?>
+	<p class="center">サイトマップを作成しています。しばらくお待ちください...。</p>
+	<p class="center">ダウンロードが完了したら、<a href="?PX=plugins.sitemapExcel">ここ</a>をクリックして戻ります。</p>
+<?php } ?>
+</div>
+
+<script language="javascript">
+	document.write('<style type="text/css">.cont_submit_btn{display:none;}</style>');
+	$(window).load(function() {
+		$('form.cont_main_form .cont_progress_msg').show();
+		$('form.cont_main_form').submit();
+	});
+</script>
+<div class="cont_submit_btn">
+	<p>エクセルファイルのアップロードは完了しました。</p>
+	<p>次のボタンをクリックして、インポートを実行してください。</p>
+	<p class="center"><input type="submit" value="インポートを実行する" /></p>
+</div>
+
+<?php
+		$src .= ob_get_clean();
+		$src .= '</form>'."\n";
+		print $this->html_template($src);
+		exit;
+	}
+	private function execute_import_import(){
 
 		$tmp_class_name = $this->px->load_px_plugin_class('/'.$this->command[1].'/daos/import.php');
 		if(!$tmp_class_name){
@@ -268,29 +387,11 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 		$path_xlsx = $this->path_data_dir.'sitemapExcel.xlsx';//[UTODO]仮実装
 		$path_csv  = $this->path_data_dir.'sitemapExcel.csv';//[UTODO]仮実装
 
-		if( !$this->px->dbh()->mkdir_all( dirname($path_xlsx) ) ){
-			$this->px->error()->error_log('FAILED to make a directory ['.dirname($path_xlsx).'].', __FILE__, __LINE__);
-			print $this->html_template('[ERROR] FAILED to make a directory ['.dirname($path_xlsx).'].');
-			exit;
-		}
-
-		$ulfileinfo = $this->px->req()->get_uploadfile('file_xlsx');
-		if( !$this->px->dbh()->file_overwrite( $path_xlsx, $ulfileinfo['content'] ) ){
-			$this->px->error()->error_log('FAILED to update inner xlsx.', __FILE__, __LINE__);
-			print $this->html_template('[ERROR] FAILED to update inner xlsx.');
-			exit;
-		}
-
 		if( !$obj_import->import_xlsx2sitemap( $path_xlsx, $path_csv ) ){
 			$this->px->error()->error_log('FAILED to import xlsx.', __FILE__, __LINE__);
 			print $this->html_template('[ERROR] FAILED to import xlsx.');
 			exit;
 		}
-
-		clearstatcache();
-		$this->px->req()->delete_uploadfile_all();// セッション上の一時ファイルを削除
-		clearstatcache();
-
 
 		if( $this->px->req()->get_param('file_overwrite') == 1 ){
 			// サイトマップを自動的に置き換えて完了画面へリダイレクト
@@ -336,7 +437,6 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 		print $this->html_template($src);
 		exit;
 	}
-
 
 
 	/**

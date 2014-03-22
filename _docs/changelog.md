@@ -1,12 +1,13 @@
 
 # PxPlugin "sitemapExcel" 更新履歴
 
-## PxPlugin sitemapExcel 0.5.0b3 (2013/\*\*/\*\*)
+## PxPlugin sitemapExcel 0.5.0b3 (2014/\*\*/\*\*)
 
 - エクセルの定義に list_flg がない場合、全ページ list_flg=1 として扱うようにした。
 - パスが省略できるファイル名の場合の評価が揺れる問題を修正。
 - インポート時にタイムアウトが起きないようにした。
 - 定義行が AA列 よりも右へ多い場合に、正しく読み取れない事がある不具合を修正。
+- アップロード画面のUIを改善。
 
 
 ## PxPlugin sitemapExcel 0.5.0b2 (2013/12/2)
