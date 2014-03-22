@@ -1,7 +1,7 @@
 
 # PxPlugin "sitemapExcel" 更新履歴
 
-## PxPlugin sitemapExcel 0.5.0b3 (2014/\*\*/\*\*)
+## PxPlugin sitemapExcel 0.5.0b3 (2014/3/22)
 
 - エクセルの定義に list_flg がない場合、全ページ list_flg=1 として扱うようにした。
 - パスが省略できるファイル名の場合の評価が揺れる問題を修正。

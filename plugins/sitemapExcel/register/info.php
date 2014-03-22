@@ -11,7 +11,7 @@ class pxplugin_sitemapExcel_register_info{
 	 * @return string バージョン番号を示す文字列
 	 */
 	public function get_version(){
-		return '0.5.0b2-nb';
+		return '0.5.0b3';
 	}
 
 }
