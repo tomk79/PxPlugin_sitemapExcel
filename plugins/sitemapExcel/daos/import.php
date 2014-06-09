@@ -5,38 +5,48 @@
  */
 class pxplugin_sitemapExcel_daos_import{
 
-	private $command;
 	private $px;
+	private $plugin;
+	private $path_import_data_dir;
 
 
 	/**
 	 * コンストラクタ
-	 * @param $command = PXコマンド配列
 	 * @param $px = PxFWコアオブジェクト
 	 */
-	public function __construct( $command, $px ){
-		$this->command = $command;
+	public function __construct( $px ){
 		$this->px = $px;
+		$this->plugin = $this->px->get_plugin_object('sitemapExcel');
+		$this->path_import_data_dir = $this->plugin->get_path_import_data_dir();
 	}
 
-
 	/**
-	 * PHPExcelHelper を生成する
+	 * エクセルのパスを取得
 	 */
-	private function factory_PHPExcelHelper(){
-		$tmp_class_name = $this->px->load_px_plugin_class('/'.$this->command[1].'/helper/PHPExcelHelper.php');
-		if(!$tmp_class_name){
-			$this->px->error()->error_log('FAILED to load "PHPExcelHelper.php".', __FILE__, __LINE__);
-			return false;
-		}
-		$phpExcelHelper = new $tmp_class_name($this->px);
-		return $phpExcelHelper;
-	}// factory_PHPExcelHelper()
+	public function get_realpath_xlsx(){
+		return $this->path_import_data_dir.'sitemapExcel.xlsx';
+	}
+	/**
+	 * 出力先CSVのパスを取得
+	 */
+	public function get_realpath_csv(){
+		return $this->path_import_data_dir.'sitemapExcel.csv';
+	}
+	/**
+	 * ログファイルのパスを取得
+	 */
+	public function get_realpath_logfile(){
+		return $this->path_import_data_dir.'import.txt';
+	}
 
 	/**
 	 * xlsxからサイトマップCSVを出力する。
 	 */
-	public function import_xlsx2sitemap( $path_xlsx, $path_csv ){
+	public function import_xlsx2sitemap(){
+		$path_xlsx = $this->get_realpath_xlsx();
+		$path_csv  = $this->get_realpath_csv();
+		$path_log  = $this->get_realpath_logfile();
+
 		$path_toppage = '/';
 		if( strlen($this->px->get_conf('project.path_top')) ){
 			$path_toppage = $this->px->get_conf('project.path_top');
@@ -44,7 +54,7 @@ class pxplugin_sitemapExcel_daos_import{
 		$path_toppage = $this->regulize_path( $path_toppage );
 
 		$sitemap_definition = $this->px->site()->get_sitemap_definition();
-		$phpExcelHelper = $this->factory_PHPExcelHelper();
+		$phpExcelHelper = $this->plugin->factory_PHPExcelHelper();
 		if( !$phpExcelHelper ){
 			return false;
 		}

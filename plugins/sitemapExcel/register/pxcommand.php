@@ -7,8 +7,9 @@ $this->load_px_class('/bases/pxcommand.php');
 class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 
 	private $command;
+	private $plugin;
 
-	private $path_data_dir;
+	private $path_import_data_dir;
 
 	/**
 	 * コンストラクタ
@@ -18,7 +19,8 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 	public function __construct( $command , $px ){
 		parent::__construct( $command , $px );
 		$this->command = $this->get_command();
-		$this->path_data_dir = $this->px->get_conf('paths.px_dir').'_sys/ramdata/plugins/sitemapExcel/';
+		$this->plugin = $this->px->get_plugin_object('sitemapExcel');
+		$this->path_import_data_dir = $this->plugin->get_path_import_data_dir();
 		$this->start();
 	}
 
@@ -156,8 +158,9 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 		$src .= '</table>'."\n";
 		$src .= ''."\n";
 		ob_start(); ?>
-			<script language="javascript">
+			<script type="text/javascript">
 				$(function() {
+					var uploadingStatusFlg = 0;
 					var droppable = $('.cont_file_upload_droppable');
 
 					// File API が使用できない場合は諦めます.
@@ -173,7 +176,7 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 						'text-align':'center',
 						'background-color':'#ffffdd',
 						'cursor':'crosshair'
-					}).html('ここにエクセルファイルをドロップしてインポート');
+					}).text('ここにエクセルファイルをドロップしてインポート');
 
 					// イベントをキャンセルするハンドラです.
 					function cancelEvent(event) {
@@ -182,19 +185,9 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 						return false;
 					}
 
-					// dragenter, dragover イベントのデフォルト処理をキャンセルします.
-					droppable.bind("dradenter", cancelEvent);
-					droppable.bind("dragover", cancelEvent);
-					droppable.bind("mousedown", cancelEvent);
-					droppable.bind("click", cancelEvent);
-
-
 					// ドロップ時のイベントハンドラを設定します.
 					function handleDroppedFile(event) {
-						// ファイルは複数ドロップされる可能性がありますが, 
-						// ここでは 1 つ目のファイルを扱います.
 						var file = event.originalEvent.dataTransfer.files[0];
-						// $("input[name='file_xlsx']").val(file);
 
 						var altxt = '';
 						altxt += 'name = '+file.name+"\n";
@@ -208,6 +201,8 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 						if( !confirm(altxt) ){
 							return false;
 						}
+
+						droppable.text('アップロードしています...');
 
 						// FormData オブジェクトを用意
 						var fd = new FormData();
@@ -226,9 +221,11 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 							contentType: false,
 							success:function(data){
 								if( data.result != 'success' ){
-									alert('ERROR: アップロードに失敗しました。'+data.error_msg);
+									droppable.text('ERROR: アップロードに失敗しました。'+data.error_msg);
 									return false;
 								}
+								droppable.text('アップロード完了しました。');
+
 								var form = $('<form />');
 								form
 									.attr({
@@ -242,7 +239,7 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 								;
 							},
 							error:function(){
-								alert('ERROR: アップロードに失敗しました。しばらくしたらもう一度お試しください。');
+								droppable.text('ERROR: アップロードに失敗しました。しばらくしたらもう一度お試しください。');
 							}
 						});
 
@@ -251,8 +248,16 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 						return false;
 					}
 
-					// ドロップ時のイベントハンドラを設定します.
-					droppable.bind("drop", handleDroppedFile);
+					droppable
+						//  イベントのデフォルト処理をキャンセル
+						.bind("dragenter", cancelEvent)
+						.bind("dragover", cancelEvent)
+						.bind("mousedown", cancelEvent)
+						.bind("click", cancelEvent)
+						//  ドロップイベントを設定
+						.bind("drop", handleDroppedFile)
+					;
+					return true;
 				});
 			</script>
 <?php
@@ -283,23 +288,26 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 		}elseif( $this->px->req()->get_param('file_overwrite') < 0 || $this->px->req()->get_param('file_overwrite') > 1 ){
 			$rtn['file_overwrite'] = 'サイトマップCSVの上書き設定に、想定外の値が渡されました。';
 		}
+		$tmp_path_sitemap_dir = $this->plugin->get_sitemap_dir();
 		if( $this->px->req()->get_param('file_overwrite') == 1 ){
-			$tmp_sitemap_files = $this->px->dbh()->ls( $this->px->get_conf('paths.px_dir').'sitemaps/' );
+			$tmp_sitemap_files = $this->px->dbh()->ls( $tmp_path_sitemap_dir );
 			foreach( $tmp_sitemap_files as $tmp_sitemap_files_basename ){
-				if( !$this->px->dbh()->is_writable( $this->px->get_conf('paths.px_dir').'sitemaps/'.$tmp_sitemap_files_basename ) ){
+				if( !$this->px->dbh()->is_writable( $tmp_path_sitemap_dir.$tmp_sitemap_files_basename ) ){
 					$rtn['file_overwrite'] = 'サイトマップCSVファイル 「'.$tmp_sitemap_files_basename.'」を上書きできません。パーミッション設定を変更してください。';
 					break;
 				}
 			}
-			if( !$this->px->dbh()->is_writable($this->px->get_conf('paths.px_dir').'sitemaps/') ){
-				$rtn['file_overwrite'] = 'サイトマップディレクトリ「'.realpath($this->px->get_conf('paths.px_dir').'sitemaps/').'」を上書きできません。パーミッション設定を変更してください。';
+			if( !$this->px->dbh()->is_writable($tmp_path_sitemap_dir) ){
+				$rtn['file_overwrite'] = 'サイトマップディレクトリ「'.realpath($tmp_path_sitemap_dir).'」を上書きできません。パーミッション設定を変更してください。';
 			}
 		}
 		return $rtn;
 	}
 	private function execute_import_upload(){
+		$this->plugin->empty_import_data_dir();//インポートディレクトリを削除
 
-		$path_xlsx = $this->path_data_dir.'sitemapExcel.xlsx';
+
+		$path_xlsx = $this->path_import_data_dir.'sitemapExcel.xlsx';
 		if( !$this->px->dbh()->mkdir_all( dirname($path_xlsx) ) ){
 			$error_msg = 'FAILED to make a directory ['.dirname($path_xlsx).'].';
 			$this->px->error()->error_log($error_msg, __FILE__, __LINE__);
@@ -376,18 +384,13 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 	}
 	private function execute_import_import(){
 
-		$tmp_class_name = $this->px->load_px_plugin_class('/'.$this->command[1].'/daos/import.php');
-		if(!$tmp_class_name){
-			$this->px->error()->error_log('FAILED to load "daos/import.php".', __FILE__, __LINE__);
-			print '[ERROR] FAILED to load "daos/import.php".';
-			exit;
-		}
-		$obj_import = new $tmp_class_name($this->command, $this->px);
+		$obj_import = $this->plugin->factory_import();
 
-		$path_xlsx = $this->path_data_dir.'sitemapExcel.xlsx';//[UTODO]仮実装
-		$path_csv  = $this->path_data_dir.'sitemapExcel.csv';//[UTODO]仮実装
+		$path_xlsx = $obj_import->get_realpath_xlsx();
+		$path_csv  = $obj_import->get_realpath_csv();
+		$path_log  = $obj_import->get_realpath_logfile();
 
-		if( !$obj_import->import_xlsx2sitemap( $path_xlsx, $path_csv ) ){
+		if( !$obj_import->import_xlsx2sitemap() ){
 			$this->px->error()->error_log('FAILED to import xlsx.', __FILE__, __LINE__);
 			print $this->html_template('[ERROR] FAILED to import xlsx.');
 			exit;
@@ -395,20 +398,21 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 
 		if( $this->px->req()->get_param('file_overwrite') == 1 ){
 			// サイトマップを自動的に置き換えて完了画面へリダイレクト
-			$tmp_sitemap_files = $this->px->dbh()->ls( $this->px->get_conf('paths.px_dir').'sitemaps/' );
+			$tmp_path_sitemap_dir = $this->plugin->get_sitemap_dir();
+			$tmp_sitemap_files = $this->px->dbh()->ls( $tmp_path_sitemap_dir );
 			foreach( $tmp_sitemap_files as $tmp_sitemap_files_basename ){
 				if( !strlen($tmp_sitemap_files_basename) ){ continue; }
-				if( is_dir( $this->px->get_conf('paths.px_dir').'sitemaps/'.$tmp_sitemap_files_basename ) ){ continue; } // ディレクトリは消さない。(旧式 .svn 対策の意味でも)
+				if( is_dir( $tmp_path_sitemap_dir.$tmp_sitemap_files_basename ) ){ continue; } // ディレクトリは消さない。(旧式 .svn 対策の意味でも)
 				if( strtolower( $this->px->dbh()->get_extension( $tmp_sitemap_files_basename ) ) != 'csv' ){ continue; } // *.csv 以外は消さない。(バックアップファイルなどを考慮して)
-				if( !$this->px->dbh()->rm( $this->px->get_conf('paths.px_dir').'sitemaps/'.$tmp_sitemap_files_basename ) ){
-					$this->px->error()->error_log('FAILED to remove sitemap file "'.realpath($this->px->get_conf('paths.px_dir').'sitemaps/'.$tmp_sitemap_files_basename).'".', __FILE__, __LINE__);
-					print $this->html_template('[ERROR] FAILED to remove sitemap file "'.realpath($this->px->get_conf('paths.px_dir').'sitemaps/'.$tmp_sitemap_files_basename).'".');
+				if( !$this->px->dbh()->rm( $tmp_path_sitemap_dir.$tmp_sitemap_files_basename ) ){
+					$this->px->error()->error_log('FAILED to remove sitemap file "'.realpath($tmp_path_sitemap_dir.$tmp_sitemap_files_basename).'".', __FILE__, __LINE__);
+					print $this->html_template('[ERROR] FAILED to remove sitemap file "'.realpath($tmp_path_sitemap_dir.$tmp_sitemap_files_basename).'".');
 					exit;
 				}
 			}
-			if( !$this->px->dbh()->rename( $path_csv, $this->px->get_conf('paths.px_dir').'sitemaps/sitemapExcel.csv' ) ){
-				$this->px->error()->error_log('FAILED to rename sitemap file "'.$path_csv.'" to "'.$this->px->get_conf('paths.px_dir').'sitemaps/sitemapExcel.csv".', __FILE__, __LINE__);
-				print $this->html_template('[ERROR] FAILED to remove sitemap file "'.$path_csv.'" to "'.$this->px->get_conf('paths.px_dir').'sitemaps/sitemapExcel.csv".');
+			if( !$this->px->dbh()->rename( $path_csv, $tmp_path_sitemap_dir.'sitemapExcel.csv' ) ){
+				$this->px->error()->error_log('FAILED to rename sitemap file "'.$path_csv.'" to "'.$tmp_path_sitemap_dir.'sitemapExcel.csv".', __FILE__, __LINE__);
+				print $this->html_template('[ERROR] FAILED to remove sitemap file "'.$path_csv.'" to "'.$tmp_path_sitemap_dir.'sitemapExcel.csv".');
 				exit;
 			}
 			return $this->px->redirect( $this->href().'&mode=thanks' );
@@ -417,8 +421,6 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 			$this->px->flush_file($path_csv, array('filename'=>'PxFW_'.$this->px->get_conf('project.id').'_sitemap_'.date('Ymd_Hi').'.csv', 'delete'=>false));
 		}
 		exit;
-		// return $this->px->redirect( $this->href().'&mode=thanks' );
-
 	}
 	private function page_import_thanks(){
 		$src = '';
