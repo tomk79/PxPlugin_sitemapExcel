@@ -13,6 +13,9 @@ sitemapExcelプラグインは、Pickles Framework(PxFW)のサイトマップCSV
    およびすべてのサブディレクトリとファイルに、
    ウェブサーバーから書き込み可能なパーミッションを設定する。
 
+エクセルファイルの容量が大きい場合に、インポート時にメモリが足りずに異常終了することがあります。この場合、`.htaccess` で `php_value memory_limit -1` を有効にするなどして、使用可能なメモリを増やすことで解決されるかも知れません。
+
+
 ## 使い方 - Usage
 
 1. ブラウザで、URLにPX Command `?PX=plugins.sitemapExcel` をつけてアクセスする。
@@ -20,6 +23,7 @@ sitemapExcelプラグインは、Pickles Framework(PxFW)のサイトマップCSV
 3. エクセルファイルをドラッグ＆ドロップする、またはファイル選択してアップロードする。
 
 エクセルファイルの作り方、形式については、エクスポート機能でダウンロードできるファイルを参考にしてください。
+
 
 ## システム要件 - Requirement
 
@@ -45,7 +49,16 @@ PxFW および PHPExcel の要件を参照。
 
 - <a href="http://pickles.pxt.jp/" target="_blank">http://pickles.pxt.jp/</a>
 
-------
-(C)Tomoya Koyanagi.
-http://www.pxt.jp/
+## ライセンス - License
+
+<a href="http://ja.wikipedia.org/wiki/MIT_License" target="_blank">MIT License</a>
+
+
+## 作者 - Author
+
+- (C)Tomoya Koyanagi &lt;tomk79@gmail.com&gt;
+- website: <a href="http://www.pxt.jp/" target="_blank">http://www.pxt.jp/</a>
+- Twitter: @tomk79 <a href="http://twitter.com/tomk79/" target="_blank">http://twitter.com/tomk79/</a>
+
+
 
