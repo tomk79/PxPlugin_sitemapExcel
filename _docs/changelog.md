@@ -3,7 +3,7 @@
 
 ## PxPlugin sitemapExcel 0.5.0b4 (2014/\*\*/\*\*)
 
-- \*\*\*\*
+- skip_empty_col が省略された場合に、デフォルト値 20 を与えるようになった。
 
 
 ## PxPlugin sitemapExcel 0.5.0b3 (2014/3/22)

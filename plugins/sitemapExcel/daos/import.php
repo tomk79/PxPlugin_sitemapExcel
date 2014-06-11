@@ -288,6 +288,11 @@ class pxplugin_sitemapExcel_daos_import{
 		$rtn['row_data_start'] = intval($rtn['row_data_start']);
 		$rtn['skip_empty_col'] = intval($rtn['skip_empty_col']);
 
+		if( !$rtn['skip_empty_col'] ){
+			// 省略されていた場合にデフォルト値を与える
+			$rtn['skip_empty_col'] = 20;
+		}
+
 		$rtn['col_define'] = array();
 
 		$mergedCells = $objSheet->getMergeCells();
