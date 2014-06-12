@@ -5,6 +5,7 @@
 
 - skip\_empty\_col が省略された場合に、デフォルト値 20 を与えるようになった。
 - list\_flg が常に1と認識されてしまう不具合を修正。
+- path 列が空白でも、title 列に値がある場合は、仮のパス alias:\_tbd.html をセットして通すようにした。
 
 
 ## PxPlugin sitemapExcel 0.5.0b3 (2014/3/22)

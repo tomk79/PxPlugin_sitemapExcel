@@ -130,31 +130,6 @@ class pxplugin_sitemapExcel_daos_import{
 				// 削除フラグ
 				continue;
 			}
-			if(!strlen( $tmp_page_info['path'] )){
-				// pathが空白なら終わったものと思う。
-				break;
-			}
-			if( !array_key_exists('list_flg', $table_definition['col_define']) ){
-				// エクセルの定義にlist_flg列がなかったら、
-				// 全ページにlist_flg=1をセット。
-				$tmp_page_info['list_flg'] = 1;
-			}
-
-			// 読み込んだパスを正規化
-			$tmp_page_info['path'] = $this->regulize_path( $tmp_page_info['path'] );
-
-			// 省略されたIDを自動的に付与
-			if(!strlen($tmp_page_info['id'])){
-				// トップページは空白でなければならない。
-				if( $path_toppage != $tmp_page_info['path'] ){
-					$tmp_page_info['id'] = $this->generate_auto_page_id();
-				}
-			}
-
-			// トップページは空白でなければならない。
-			if( $path_toppage == $tmp_page_info['path'] ){
-				$tmp_page_info['id'] = '';
-			}
 
 			// タイトルだけ特別
 			$col_title_col = $col_title['start'];
@@ -176,6 +151,36 @@ class pxplugin_sitemapExcel_daos_import{
 			}
 			unset($col_title_col);
 			unset($tmp_alias_title);
+
+			if(!strlen( $tmp_page_info['path'] )){
+				if(!strlen( $tmp_page_info['title'] )){
+					// pathもtitleも空白なら終わったものと思う。
+					break;
+				}
+				$tmp_page_info['path'] = 'alias:/_tbd.html';//pathがなくてもtitleがあれば、仮の値を入れて通す。
+			}
+
+			if( !array_key_exists('list_flg', $table_definition['col_define']) ){
+				// エクセルの定義にlist_flg列がなかったら、
+				// 全ページにlist_flg=1をセット。
+				$tmp_page_info['list_flg'] = 1;
+			}
+
+			// 読み込んだパスを正規化
+			$tmp_page_info['path'] = $this->regulize_path( $tmp_page_info['path'] );
+
+			// 省略されたIDを自動的に付与
+			if(!strlen($tmp_page_info['id'])){
+				// トップページは空白でなければならない。
+				if( $path_toppage != $tmp_page_info['path'] ){
+					$tmp_page_info['id'] = $this->generate_auto_page_id();
+				}
+			}
+
+			// トップページは空白でなければならない。
+			if( $path_toppage == $tmp_page_info['path'] ){
+				$tmp_page_info['id'] = '';
+			}
 
 			// パンくずも特別
 			$tmp_breadcrumb = $last_breadcrumb;
