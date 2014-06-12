@@ -134,7 +134,7 @@ class pxplugin_sitemapExcel_daos_import{
 				// pathが空白なら終わったものと思う。
 				break;
 			}
-			if( !array_key_exists('list_flg', $xls_custom_column_definition) ){
+			if( !array_key_exists('list_flg', $table_definition['col_define']) ){
 				// エクセルの定義にlist_flg列がなかったら、
 				// 全ページにlist_flg=1をセット。
 				$tmp_page_info['list_flg'] = 1;
@@ -286,12 +286,11 @@ class pxplugin_sitemapExcel_daos_import{
 		parse_str( $objSheet->getCell('A1')->getCalculatedValue(), $rtn );
 		$rtn['row_definition'] = intval($rtn['row_definition']);
 		$rtn['row_data_start'] = intval($rtn['row_data_start']);
-		$rtn['skip_empty_col'] = intval($rtn['skip_empty_col']);
-
-		if( !$rtn['skip_empty_col'] ){
+		if( !strlen($rtn['skip_empty_col']) ){
 			// 省略されていた場合にデフォルト値を与える
 			$rtn['skip_empty_col'] = 20;
 		}
+		$rtn['skip_empty_col'] = intval($rtn['skip_empty_col']);
 
 		$rtn['col_define'] = array();
 
