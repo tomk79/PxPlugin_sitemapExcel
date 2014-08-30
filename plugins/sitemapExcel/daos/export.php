@@ -256,7 +256,7 @@ class pxplugin_sitemapExcel_daos_export{
 
 		foreach( $table_definition['col_define'] as $def_row ){
 			$cellName = ($def_row['col']).$this->current_row;
-			$cellValue = $page_info[$def_row['key']];
+			$cellValue = @$page_info[$def_row['key']];
 			switch($def_row['key']){
 				case 'title_h1':
 				case 'title_label':
@@ -428,7 +428,7 @@ class pxplugin_sitemapExcel_daos_export{
 			$rtn['col_define'][$def_row['key']]['name'] = $def_row['name'];
 			$rtn['col_define'][$def_row['key']]['key'] = $def_row['key'];
 
-			if(strlen($rtn['col_define'][$def_row['key']]['col'])){continue;}
+			if(strlen(@$rtn['col_define'][$def_row['key']]['col'])){continue;}
 			$rtn['col_define'][$def_row['key']]['col'] = ($current_col++);
 		}
 
@@ -440,7 +440,7 @@ class pxplugin_sitemapExcel_daos_export{
 	 */
 	private function get_sitemap_definition(){
 		$rtn = $this->px->site()->get_sitemap_definition();
-		if( !is_array($rtn['**delete_flg']) ){
+		if( !is_array(@$rtn['**delete_flg']) ){
 			$rtn['**delete_flg'] = array();
 			$rtn['**delete_flg']['name'] = '削除フラグ';
 			$rtn['**delete_flg']['key'] = '**delete_flg';

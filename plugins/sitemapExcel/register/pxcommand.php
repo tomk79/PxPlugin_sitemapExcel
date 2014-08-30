@@ -28,9 +28,9 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 	 * 処理の開始
 	 */
 	private function start(){
-		if( $this->command[2] == 'import' ){
+		if( @$this->command[2] == 'import' ){
 			return $this->page_import();
-		}elseif( $this->command[2] == 'export' ){
+		}elseif( @$this->command[2] == 'export' ){
 			return $this->page_export();
 		}
 		return $this->page_homepage();
@@ -123,10 +123,10 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 		$src .= '		</tr>'."\n";
 		$src .= '	</thead>'."\n";
 		$src .= '	<tbody>'."\n";
-		$src .= '		<tr'.(strlen($error['file_overwrite'])?' class="form_elements-error"':'').'>'."\n";
+		$src .= '		<tr'.(strlen(@$error['file_overwrite'])?' class="form_elements-error"':'').'>'."\n";
 		$src .= '			<th>サイトマップCSVの上書き</th>'."\n";
 		$src .= '			<td>'."\n";
-		if( strlen($error['file_overwrite']) ){
+		if( strlen(@$error['file_overwrite']) ){
 			$src .= '<ul class="form_elements-errors">'."\n";
 			$src .= '	<li>'.t::h($error['file_overwrite']).'</li>'."\n";
 			$src .= '</ul>'."\n";
@@ -137,10 +137,10 @@ class pxplugin_sitemapExcel_register_pxcommand extends px_bases_pxcommand{
 		$src .= '				</ul>'."\n";
 		$src .= '			</td>'."\n";
 		$src .= '		</tr>'."\n";
-		$src .= '		<tr'.(strlen($error['file_xlsx'])?' class="form_elements-error"':'').'>'."\n";
+		$src .= '		<tr'.(strlen(@$error['file_xlsx'])?' class="form_elements-error"':'').'>'."\n";
 		$src .= '			<th>サイトマップ(xlsx形式)</th>'."\n";
 		$src .= '			<td>'."\n";
-		if( strlen($error['file_xlsx']) ){
+		if( strlen(@$error['file_xlsx']) ){
 			$src .= '<ul class="form_elements-errors">'."\n";
 			$src .= '	<li>'.t::h($error['file_xlsx']).'</li>'."\n";
 			$src .= '</ul>'."\n";
